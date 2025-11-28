@@ -67,11 +67,11 @@ Entity names and IDs may vary based on your device name and instance; use the UI
 
 ## Features
 
- [x] Open / Close
- [ ] Battery level
- [ ] Temperature
- [ ] Brightness / light level 
- [ ] Additional diagnostics and improved pairing UX
+- [x] Open / Close
+- [ ] Battery level
+- [ ] Temperature
+- [ ] Brightness / light level 
+- [ ] Additional diagnostics and improved pairing UX
 
 
 ## Development
@@ -95,3 +95,4 @@ This project is licensed under the MIT License. See `LICENSE` for details.
 
 - Inspired by the Home Assistant integration blueprint and community examples
 - Not affiliated with or endorsed by Run‑Chicken; all trademarks are the property of their respective owners
+
