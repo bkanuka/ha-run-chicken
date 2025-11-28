@@ -1,4 +1,4 @@
-"""Custom types for integration_blueprint."""
+"""Custom types for run_chicken."""
 
 from __future__ import annotations
 
@@ -9,17 +9,17 @@ if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
     from homeassistant.loader import Integration
 
-    from .api import IntegrationBlueprintApiClient
+    from .api import RunChickenApiClient
     from .coordinator import BlueprintDataUpdateCoordinator
 
 
-type IntegrationBlueprintConfigEntry = ConfigEntry[IntegrationBlueprintData]
+type RunChickenConfigEntry = ConfigEntry[RunChickenData]
 
 
 @dataclass
-class IntegrationBlueprintData:
+class RunChickenData:
     """Data for the Blueprint integration."""
 
-    client: IntegrationBlueprintApiClient
+    client: RunChickenApiClient
     coordinator: BlueprintDataUpdateCoordinator
     integration: Integration

@@ -1,0 +1,12 @@
+{
+  "domain": "run_chicken",
+  "name": "Run Chicken",
+  "codeowners": [
+    "@ludeeus"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/ludeeus/run_chicken",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/ludeeus/run_chicken/issues",
+  "version": "0.1.0"
+}
