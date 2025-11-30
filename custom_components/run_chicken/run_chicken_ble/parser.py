@@ -92,12 +92,11 @@ class RunChickenDeviceData:
         return self._device
 
 
-async def test_update_device():
-    addr = "00:80:e1:22:43:0d"
-    ble_device = await BleakScanner.find_device_by_address(addr, timeout=10.0)
+async def test_update_device(test_addr: str):
+    ble_device = await BleakScanner.find_device_by_address(test_addr, timeout=10.0)
 
     if not ble_device:
-        print(f"Device with address {addr} not found.")
+        print(f"Device with address {test_addr} not found.")
         return
 
     parser = RunChickenDeviceData()
@@ -105,7 +104,8 @@ async def test_update_device():
 
     print(device)
 
+
 if __name__ == "__main__":
-    # Set _LOGGER to debug
     logging.basicConfig(level=logging.DEBUG)
-    asyncio.run(test_update_device())
+    test_addr = "00:80:e1:22:43:0d"
+    asyncio.run(test_update_device(test_addr))
