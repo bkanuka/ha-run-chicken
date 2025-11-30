@@ -10,13 +10,10 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntityDescription,
 )
 
-from .entity import RunChickenEntity
-
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-    from .coordinator import BlueprintDataUpdateCoordinator
     from .data import RunChickenConfigEntry
 
 ENTITY_DESCRIPTIONS = (
@@ -28,34 +25,56 @@ ENTITY_DESCRIPTIONS = (
 )
 
 
-async def async_setup_entry(
-    hass: HomeAssistant,  # noqa: ARG001 Unused function argument: `hass`
-    entry: RunChickenConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-) -> None:
-    """Set up the binary_sensor platform."""
-    async_add_entities(
-        RunChickenBinarySensor(
-            coordinator=entry.runtime_data.coordinator,
-            entity_description=entity_description,
-        )
-        for entity_description in ENTITY_DESCRIPTIONS
+from homeassistant import config_entries
+from homeassistant.components.bluetooth.passive_update_processor import (
+    PassiveBluetoothDataProcessor,
+    PassiveBluetoothDataUpdate,
+    PassiveBluetoothProcessorEntity,
+)
+from homeassistant.components.bluetooth.active_update_processor import (
+    ActiveBluetoothProcessorCoordinator,
+)
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+from run_chicken.run_chicken_ble.const import DOMAIN
+
+
+def sensor_update_to_bluetooth_data_update(parsed_data):
+    """Convert a sensor update to a Bluetooth data update."""
+    # This function must convert the parsed_data
+    # from your library's update_method to a `PassiveBluetoothDataUpdate`
+    return PassiveBluetoothDataUpdate(
+        devices={},
+        entity_descriptions={},
+        entity_data={},
+        entity_names={},
     )
 
 
-class RunChickenBinarySensor(RunChickenEntity, BinarySensorEntity):
-    """run_chicken binary_sensor class."""
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: config_entries.ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up the example BLE sensors."""
+    coordinator: ActiveBluetoothProcessorCoordinator = hass.data[DOMAIN][
+        entry.entry_id
+    ]
+    processor = PassiveBluetoothDataProcessor(sensor_update_to_bluetooth_data_update)
+    entry.async_on_unload(
+        processor.async_add_entities_listener(
+            RunChickenSensorEntity, async_add_entities
+        )
+    )
+    entry.async_on_unload(coordinator.async_register_processor(processor))
 
-    def __init__(
-        self,
-        coordinator: BlueprintDataUpdateCoordinator,
-        entity_description: BinarySensorEntityDescription,
-    ) -> None:
-        """Initialize the binary_sensor class."""
-        super().__init__(coordinator)
-        self.entity_description = entity_description
+
+class RunChickenSensorEntity(PassiveBluetoothProcessorEntity, BinarySensorEntity):
+    """Representation of an example BLE sensor."""
 
     @property
-    def is_on(self) -> bool:
-        """Return true if the binary_sensor is on."""
-        return self.coordinator.data.get("title", "") == "foo"
+    def native_value(self) -> float | int | str | None:
+        """Return the native value."""
+        return self.processor.entity_data.get(self.entity_key)
+

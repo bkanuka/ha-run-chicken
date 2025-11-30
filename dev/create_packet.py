@@ -3,8 +3,19 @@ import struct
 import datetime as dt
 
 
-def create_packet(open_door: bool, packet_time: dt.datetime = None) -> bytes:
+def create_packet(open_door: bool = False, close_door: bool = False, packet_time: dt.datetime = None) -> bytes:
     """Create a packet for the Run-Chicken door."""
+
+    # Ensure only one and only one door command is sent
+    try:
+        assert not (open_door and close_door)
+    except AssertionError:
+        raise ValueError("Only one door command can be sent at a time.")
+
+    try:
+        assert open_door or close_door
+    except AssertionError:
+        raise ValueError("One of open_door or close_door must be True.")
 
     if packet_time is None:
         packet_time = dt.datetime.now()

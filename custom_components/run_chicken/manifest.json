@@ -2,11 +2,25 @@
   "domain": "run_chicken",
   "name": "Run Chicken",
   "codeowners": [
-    "@ludeeus"
+    "@bkanuka"
+  ],
+  "dependencies": [
+    "bluetooth_adapters"
+  ],
+  "bluetooth": [
+    {
+      "service_uuid": "0000004f-cc7a-482a-984a-7f2ed5b3e58f"
+    },
+    {
+      "service_uuid": "00000000-cc7a-482a-984a-7f2ed5b3e58f"
+    }
   ],
   "config_flow": true,
-  "documentation": "https://github.com/ludeeus/run_chicken",
-  "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/ludeeus/run_chicken/issues",
-  "version": "0.1.0"
+  "documentation": "https://github.com/bkanuka/run_chicken",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/bkanuka/run_chicken/issues",
+  "version": "0.1.0",
+  "requirements": [
+    "crc8==0.2.1"
+  ]
 }
