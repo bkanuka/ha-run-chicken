@@ -41,6 +41,10 @@ class RunChickenDevice:
         else:
             self._device: RunChickenDeviceData = device
 
+    @property
+    def address(self):
+        return self._client.address
+
     async def register_notification_callback(self, callback: Callable):
         read_char = self._client.services.get_characteristic(READ_CHAR_UUID)
         await self._client.start_notify(read_char, callback)
@@ -50,6 +54,9 @@ class RunChickenDevice:
 
         def on_disconnect(client):
             _LOGGER.warning(f"Device {self._device.address} disconnected unexpectedly")
+            self._client = None
+
+        if ble_device.address != self._device.address:
             self._client = None
 
         if isinstance(self._client, BleakClient) and self._client.is_connected:
@@ -68,7 +75,7 @@ class RunChickenDevice:
 
     @staticmethod
     def _parse_payload(payload: bytearray) -> dict[str, int | float]:
-        _LOGGER.debug("Parsing payload: %s", payload)
+        _LOGGER.debug(f"Parsing payload: {payload.hex()}")
 
         values = {}
         for key, config in READ_VALUES.items():
@@ -99,7 +106,7 @@ class RunChickenDevice:
 
     def update_device_from_bytes(self, payload: bytes | bytearray) -> RunChickenDeviceData:
         """ Update the device from a bytes payload. """
-        _LOGGER.debug("Updating device with payload: %s", payload)
+        _LOGGER.debug(f"Updating device from bytes: {payload.hex()}")
 
         values = self._parse_payload(payload)
         self._update_device_from_values(values)

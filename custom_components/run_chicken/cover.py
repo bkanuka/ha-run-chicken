@@ -111,10 +111,8 @@ class RunChickenCoverEntity(CoordinatorEntity[DataUpdateCoordinator[RunChickenDe
         await self._get_controller()
         await self.controller.close_cover()
 
-
     def _handle_coordinator_update(self, *args: Any) -> None:
         """Handle data update."""
-        _LOGGER.debug("Received update from coordinator")
-        _LOGGER.debug(f"Coordinator data: {self.coordinator.data}")
+        _LOGGER.debug(f"Received data update from coordinator: {self.coordinator.data}")
         self._attr_is_closed = (self.coordinator.data.door_state is RunChickenDoorState.CLOSED)
         self.async_write_ha_state()

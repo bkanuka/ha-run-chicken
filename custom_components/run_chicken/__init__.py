@@ -42,7 +42,7 @@ PLATFORMS: list[Platform] = [
 last_event_time = time.time()
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up example BLE device from a config entry."""
+    """Set up BLE device from a config entry."""
     hass.data.setdefault(DOMAIN, {})
     address = entry.unique_id
     assert address is not None
@@ -55,9 +55,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     async def _async_update_method():
         """ Get data from Run-Chicken BLE. """
         _LOGGER.debug("Running Run-Chicken update method.")
-        ble_device = async_ble_device_from_address(hass, address)
+        _LOGGER.debug(f"Trying to get ble_device with address {address}")
+
+        ble_device = async_ble_device_from_address(hass, address, connectable=True)
         if not ble_device:
-            raise ConfigEntryNotReady(
+            raise UpdateFailed(
                 f"Could not find Run-Chicken device with address {address}"
             )
         _LOGGER.debug("Run-Chicken BLE device is %s", ble_device)
@@ -90,25 +92,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Define and register a Bluetooth event callback to update the data when device start to advertise again
     def async_handle_bluetooth_event(service_info: BluetoothServiceInfoBleak, change: BluetoothChange) -> None:
         """Handle a Bluetooth reconnect event."""
-        global last_event_time
         _LOGGER.debug("BLE event received: %s, change %s", service_info, change)
-        time_difference = time.time() - last_event_time
-        # Do not require data update if is faster than defined event debounce time
-        if time_difference > EVENT_DEBOUNCE_TIME:
-            # Refresh data when device advertising is detected
-            _LOGGER.debug("Require coordinator to update the data")
-            loop = asyncio.get_running_loop()
-            loop.create_task(coordinator.async_request_refresh())
-            last_event_time = time.time()
-        else:
-            _LOGGER.debug("Don't request data due to time difference: %d < %d",
-                          time_difference, EVENT_DEBOUNCE_TIME)
+
+        # Refresh data when device advertising is detected
+        _LOGGER.debug("Require coordinator to update the data")
+        loop = asyncio.get_running_loop()
+        loop.create_task(coordinator.async_request_refresh())
+
 
     async_register_callback(
         hass,
         async_handle_bluetooth_event,
         BluetoothCallbackMatcher(address=address),
-        BluetoothScanningMode.PASSIVE,
+        BluetoothScanningMode.ACTIVE,
     )
 
     def notification_callback(gatt_char: BleakGATTCharacteristic, payload: bytearray):

@@ -26,7 +26,7 @@ class RunChickenDeviceData:
 
     def friendly_name(self) -> str:
         """Generate a name for the device."""
-        return f"Chicken-Run Door {self.name}"
+        return f"Run-Chicken Door {self.name}"
 
 
 @dataclasses.dataclass
