@@ -10,6 +10,6 @@ dependencies = [
     "crc8>=0.2.1",
     "homeassistant==2025.2.4",
     "pip>=21.3.1",
-    "ruff==0.14.6",
+    "ruff==0.14.7",
     "sensor-state-data>=2.20.0",
 ]
