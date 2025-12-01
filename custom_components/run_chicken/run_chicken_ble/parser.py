@@ -15,8 +15,7 @@ from bleak_retry_connector import (
 from run_chicken.run_chicken_ble.const import READ_CHAR_UUID
 from run_chicken.run_chicken_ble.models import RunChickenDeviceData, RunChickenDoorState
 
-_LOGGER = logging.getLogger(__package__)
-
+_LOGGER = logging.getLogger(__name__)
 
 DOOR_STATUS_PARSER = {
     0: RunChickenDoorState.OPEN,
@@ -64,8 +63,6 @@ class RunChickenDevice:
             disconnected_callback=on_disconnect,
         )
         self._device.address = self._client.address
-        #self._device.name = self._client.name
-
 
         return self._client
 
@@ -75,8 +72,7 @@ class RunChickenDevice:
 
         values = {}
         for key, config in READ_VALUES.items():
-            format_str = config["format"]
-            value = struct.unpack(format_str, payload[:18])[0]
+            value = struct.unpack(config["format"], payload[:18])[0]
             if "parser" in config:
                 value = config["parser"](value)
             values[key] = value

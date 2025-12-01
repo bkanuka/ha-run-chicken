@@ -22,5 +22,5 @@
   "requirements": [
     "crc8==0.2.1"
   ],
-  "loggers": ["run_chicken"]
+  "loggers": ["run_chicken", "run_chicken.run_chicken_ble"]
 }

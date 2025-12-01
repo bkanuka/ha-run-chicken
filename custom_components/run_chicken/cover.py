@@ -1,7 +1,5 @@
 """Cover platform for run_chicken."""
 
-
-
 from __future__ import annotations
 
 import logging
@@ -15,22 +13,21 @@ from homeassistant.components.cover import (
     CoverEntityDescription,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, CoordinatorEntity
-
 from homeassistant.helpers.device_registry import (
     CONNECTION_BLUETOOTH,
     DeviceInfo,
 )
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, CoordinatorEntity
 
-from . import RunChickenDeviceData, RunChickenDevice
-from .const import DOMAIN
-from .run_chicken_ble.cover import RunChickenCover
-from .run_chicken_ble.models import RunChickenDoorState
+from run_chicken.const import DOMAIN
+from run_chicken.run_chicken_ble.cover import RunChickenCover
+from run_chicken.run_chicken_ble.models import RunChickenDeviceData
+from run_chicken.run_chicken_ble.models import RunChickenDoorState
 
 _LOGGER = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from homeassistant.core import HomeAssistant, callback
+    from homeassistant.core import HomeAssistant
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 ENTITY_DESCRIPTIONS = (
@@ -65,13 +62,15 @@ async def async_setup_entry(
 class RunChickenCoverEntity(CoordinatorEntity[DataUpdateCoordinator[RunChickenDeviceData]], CoverEntity):
     """Run Chicken Cover."""
 
+    _attr_device_class = CoverDeviceClass.DOOR
+
     def __init__(
         self,
         coordinator: DataUpdateCoordinator[RunChickenDeviceData],
         runchicken_device: RunChickenDeviceData,
         ble_device: BLEDevice,
     ) -> None:
-        """Initialize an Thunderboard lights."""
+        """Initialize the Run-Chicken cover."""
         super().__init__(coordinator)
         self.ble_device = ble_device
         self.controller: RunChickenCover | None = None
@@ -89,10 +88,15 @@ class RunChickenCoverEntity(CoordinatorEntity[DataUpdateCoordinator[RunChickenDe
             manufacturer=runchicken_device.manufacturer,
             model=runchicken_device.model,
         )
-        self._async_update_attrs()
 
-    def _async_update_attrs(self) -> None:
-        self._attr_is_closed = self.coordinator.data.door_state == RunChickenDoorState.CLOSED
+    @property
+    def is_closed(self) -> bool | None:
+        """Return None if status is unknown, True if closed, else False."""
+        if self.coordinator.data.door_state is RunChickenDoorState.UNKNOWN:
+            return None
+        if self.coordinator.data.door_state is RunChickenDoorState.CLOSED:
+            return True
+        return False
 
     async def _get_controller(self):
         if self.controller is None or not self.controller.is_connected:
@@ -102,17 +106,15 @@ class RunChickenCoverEntity(CoordinatorEntity[DataUpdateCoordinator[RunChickenDe
     async def async_open_cover(self, **kwargs: Any) -> None:
         await self._get_controller()
         await self.controller.open_cover()
-        print("coordinator data:", self.coordinator.data)
 
     async def async_close_cover(self, **kwargs: Any) -> None:
         await self._get_controller()
         await self.controller.close_cover()
-        print("coordinator data:", self.coordinator.data)
 
 
     def _handle_coordinator_update(self, *args: Any) -> None:
         """Handle data update."""
         _LOGGER.debug("Received update from coordinator")
         _LOGGER.debug(f"Coordinator data: {self.coordinator.data}")
-        self._async_update_attrs()
+        self._attr_is_closed = (self.coordinator.data.door_state is RunChickenDoorState.CLOSED)
         self.async_write_ha_state()
