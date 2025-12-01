@@ -1,6 +1,6 @@
 import asyncio
 from bleak import BleakClient
-from create_packet import create_packet
+from run_chicken.run_chicken_ble.create_packet import create_packet
 
 SERVICE_UUID = '00000000-cc7a-482a-984a-7f2ed5b3e58f'
 ADDR = "00:80:e1:22:43:0d"

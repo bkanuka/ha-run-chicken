@@ -11,12 +11,12 @@ class RunChickenDoorState(Enum):
     OPEN = 1
     CLOSED = 2
 
-
 @dataclasses.dataclass
-class RunChickenDevice:
+class RunChickenDeviceData:
     """ Response data with information about the RunChicken device. """
 
     model: Optional[str] = "T-50"
+    manufacturer: Optional[str] = "Run-Chicken"
     name: str = ""
     identifier: str = ""
     address: str = ""

@@ -1,3 +1,6 @@
+voluptuous
+bleak-retry-connector
+bleak
 crc8==0.2.1
 colorlog==6.10.1
 homeassistant==2025.2.4

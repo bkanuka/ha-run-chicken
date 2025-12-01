@@ -3,8 +3,9 @@ from __future__ import annotations
 import asyncio
 import logging
 import struct
+from typing import Callable, Awaitable
 
-from bleak import BLEDevice, BleakClient, BleakScanner
+from bleak import BLEDevice, BleakClient, BleakScanner, BleakGATTCharacteristic
 from bleak_retry_connector import (
     BleakClientWithServiceCache,
     establish_connection,
@@ -12,9 +13,9 @@ from bleak_retry_connector import (
 )
 
 from run_chicken.run_chicken_ble.const import READ_CHAR_UUID
-from run_chicken.run_chicken_ble.models import RunChickenDevice, RunChickenDoorState
+from run_chicken.run_chicken_ble.models import RunChickenDeviceData, RunChickenDoorState
 
-_LOGGER = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__package__)
 
 
 DOOR_STATUS_PARSER = {
@@ -30,65 +31,94 @@ READ_VALUES = {
 }
 
 
-class RunChickenDeviceData:
+class RunChickenDevice:
 
-    def __init__(self, client: BleakClient | None = None, device: RunChickenDevice = None):
+    def __init__(self, client: BleakClient | None = None, device: RunChickenDeviceData = None):
         super().__init__()
         self._client: BleakClient | None = client
 
         if device is None:
-            self._device: RunChickenDevice = RunChickenDevice()
+            self._device: RunChickenDeviceData = RunChickenDeviceData()
         else:
-            self._device: RunChickenDevice = device
+            self._device: RunChickenDeviceData = device
+
+    async def register_notification_callback(self, callback: Callable):
+        read_char = self._client.services.get_characteristic(READ_CHAR_UUID)
+        await self._client.start_notify(read_char, callback)
 
     async def _get_client(self, ble_device: BLEDevice) -> BleakClient:
         """Get the client from the ble device."""
-        if self._client is not None:
+
+        def on_disconnect(client):
+            print(f"Device {self._device.address} disconnected unexpectedly")
+            self._client = None
+
+        def on_notify_data(gatt_char: BleakGATTCharacteristic, data: bytearray):
+            print(f"Device {self._device.address} received {len(data)} bytes")
+            self.update_device_from_bytes(data)
+
+        if isinstance(self._client, BleakClient) and self._client.is_connected:
             return self._client
 
         _LOGGER.debug("Getting BleakClient for Run-Chicken door: %s", ble_device.address)
         self._client = await establish_connection(
-            BleakClientWithServiceCache, ble_device, ble_device.address
+            BleakClientWithServiceCache,
+            ble_device,
+            ble_device.address,
+            disconnected_callback=on_disconnect,
         )
         self._device.address = self._client.address
         self._device.name = self._client.name
+
+
         return self._client
 
-    @retry_bluetooth_connection_error()
-    async def _read_value_chars(self) -> dict[str, int | float]:
-        """ Get the payload value from the characteristic, processed. """
-        char = self._client.services.get_characteristic(READ_CHAR_UUID)
-        payload = await self._client.read_gatt_char(char)
+    @staticmethod
+    def _parse_payload(payload: bytearray) -> dict[str, int | float]:
+        _LOGGER.debug("Parsing payload: %s", payload)
 
-        _LOGGER.debug(": %s", payload)
-
-        char_values = {}
+        values = {}
         for key, config in READ_VALUES.items():
             format_str = config["format"]
             value = struct.unpack(format_str, payload[:18])[0]
             if "parser" in config:
                 value = config["parser"](value)
-            char_values[key] = value
+            values[key] = value
 
-        return char_values
+        return values
 
-    async def update_device(self, ble_device: BLEDevice) -> RunChickenDevice:
-        """ Connects to the device with BLE and retrieves data """
-        self._client = await self._get_client(ble_device)
+    def _update_device_from_values(self, values: dict[str, int | float]):
+        _LOGGER.debug("Updating device with values: %s", values)
 
-        try:
-            char_values = await self._read_value_chars()
-        finally:
-            await self._client.disconnect()
-
-        _LOGGER.debug("Updating device with values: %s", char_values)
-
-        for k, v in char_values.items():
+        for k, v in values.items():
             if hasattr(self._device, k):
                 setattr(self._device, k, v)
             else:
                 self._device.values[k] = v
 
+    @retry_bluetooth_connection_error()
+    async def _poll_values(self) -> dict[str, int | float]:
+        """ Poll device for new values """
+        char = self._client.services.get_characteristic(READ_CHAR_UUID)
+        payload: bytearray = await self._client.read_gatt_char(char)
+
+        return self._parse_payload(payload)
+
+
+    def update_device_from_bytes(self, payload: bytes | bytearray) -> RunChickenDeviceData:
+        """ Update the device from a bytes payload. """
+        _LOGGER.debug("Updating device with payload: %s", payload)
+
+        values = self._parse_payload(payload)
+        self._update_device_from_values(values)
+        return self._device
+
+
+    async def update_device(self, ble_device: BLEDevice) -> RunChickenDeviceData:
+        """ Connects to the device with BLE and retrieves data """
+        self._client = await self._get_client(ble_device)
+        values = await self._poll_values()
+        self._update_device_from_values(values)
         return self._device
 
 
@@ -99,8 +129,8 @@ async def test_update_device(test_addr: str):
         print(f"Device with address {test_addr} not found.")
         return
 
-    parser = RunChickenDeviceData()
-    device: RunChickenDevice = await parser.update_device(ble_device)
+    parser = RunChickenDevice()
+    device: RunChickenDeviceData = await parser.update_device(ble_device)
 
     print(device)
 

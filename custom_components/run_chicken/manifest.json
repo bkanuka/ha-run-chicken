@@ -1,6 +1,7 @@
 {
   "domain": "run_chicken",
   "name": "Run Chicken",
+  "integration_type": "device",
   "codeowners": [
     "@bkanuka"
   ],
@@ -9,10 +10,8 @@
   ],
   "bluetooth": [
     {
-      "service_uuid": "0000004f-cc7a-482a-984a-7f2ed5b3e58f"
-    },
-    {
-      "service_uuid": "00000000-cc7a-482a-984a-7f2ed5b3e58f"
+      "service_uuid": "00000000-cc7a-482a-984a-7f2ed5b3e58f",
+      "connectable": true
     }
   ],
   "config_flow": true,
