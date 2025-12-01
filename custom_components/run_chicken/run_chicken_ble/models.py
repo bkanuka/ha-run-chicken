@@ -21,6 +21,7 @@ class RunChickenDeviceData:
     identifier: str = ""
     address: str = ""
     door_state: RunChickenDoorState = RunChickenDoorState.UNKNOWN
+    is_closed: bool = False
 
     values: dict[str, int | float] = dataclasses.field(default_factory=dict)
 

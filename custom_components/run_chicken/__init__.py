@@ -26,9 +26,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import UpdateFailed, DataUpdateCoordinator
 
-from run_chicken.run_chicken_ble.const import DOMAIN, LOGGER
 from run_chicken.run_chicken_ble.parser import RunChickenDevice
-from .const import DEFAULT_SCAN_INTERVAL, EVENT_DEBOUNCE_TIME
+from .const import DEFAULT_SCAN_INTERVAL, EVENT_DEBOUNCE_TIME, DOMAIN
 from .run_chicken_ble.models import RunChickenDeviceData
 
 _LOGGER = logging.getLogger(__name__)
@@ -114,8 +113,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     def notification_callback(gatt_char: BleakGATTCharacteristic, payload: bytearray):
         """Handle notification data from the device."""
-        print(f"Handling notification with payload: {payload}")
+        _LOGGER.debug(f"Handling notification payload")
         data = run_chicken.update_device_from_bytes(payload)
+        _LOGGER.debug(f"Notification data: {data}")
         coordinator.async_set_updated_data(data)
 
     await run_chicken.register_notification_callback(notification_callback)

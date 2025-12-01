@@ -17,9 +17,10 @@ from homeassistant.const import CONF_ADDRESS
 from homeassistant.data_entry_flow import FlowResult
 
 from .const import (
-    DOMAIN
+    DOMAIN, MANUFACTURER_ID
 )
 from .run_chicken_ble import RunChickenDeviceData, RunChickenDevice
+from .run_chicken_ble.const import READ_SERVICE_UUID
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -141,20 +142,24 @@ class RunChickenConfigFlow(ConfigFlow, domain=DOMAIN):
             address = discovery_info.address
             if address in current_addresses or address in self._discovered_devices:
                 continue
+            _LOGGER.debug(f"Found device with address {address} and manufacturer_data: {discovery_info.manufacturer_data}, and name: {discovery_info.name}, and manufacturer_id: {discovery_info.manufacturer_id}")
+            if MANUFACTURER_ID not in discovery_info.manufacturer_data:
+                continue
             try:
+                _LOGGER.debug(f"Trying to get data from {discovery_info}")
                 device = await self._get_device_data(discovery_info)
             except RunChickenDeviceUpdateError:
-                return self.async_abort(reason="cannot_connect")
+                return self.async_abort(reason="Cannot connect")
             except Exception:  # pylint: disable=broad-except
-                return self.async_abort(reason="unknown")
+                return self.async_abort(reason="Unknown error getting device data")
             name = get_name(device)
             self._discovered_devices[address] = Discovery(name, discovery_info, device)
 
         if not self._discovered_devices:
-            return self.async_abort(reason="no_devices_found")
+            return self.async_abort(reason="No devices found")
 
         titles = {
-            address: discovery.device.name
+            address: discovery.device.address
             for (address, discovery) in self._discovered_devices.items()
         }
         return self.async_show_form(

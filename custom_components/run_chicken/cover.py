@@ -91,7 +91,6 @@ class RunChickenCoverEntity(CoordinatorEntity[DataUpdateCoordinator[RunChickenDe
         )
         self._async_update_attrs()
 
-    @callback
     def _async_update_attrs(self) -> None:
         self._attr_is_closed = self.coordinator.data.door_state == RunChickenDoorState.CLOSED
 
@@ -103,17 +102,17 @@ class RunChickenCoverEntity(CoordinatorEntity[DataUpdateCoordinator[RunChickenDe
     async def async_open_cover(self, **kwargs: Any) -> None:
         await self._get_controller()
         await self.controller.open_cover()
+        print("coordinator data:", self.coordinator.data)
 
     async def async_close_cover(self, **kwargs: Any) -> None:
         await self._get_controller()
         await self.controller.close_cover()
+        print("coordinator data:", self.coordinator.data)
 
 
-    @callback
     def _handle_coordinator_update(self, *args: Any) -> None:
         """Handle data update."""
+        _LOGGER.debug("Received update from coordinator")
+        _LOGGER.debug(f"Coordinator data: {self.coordinator.data}")
         self._async_update_attrs()
         self.async_write_ha_state()
-
-    async def async_added_to_hass(self) -> None:
-        return await super().async_added_to_hass()

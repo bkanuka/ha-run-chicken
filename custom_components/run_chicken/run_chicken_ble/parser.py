@@ -50,12 +50,8 @@ class RunChickenDevice:
         """Get the client from the ble device."""
 
         def on_disconnect(client):
-            print(f"Device {self._device.address} disconnected unexpectedly")
+            _LOGGER.warning(f"Device {self._device.address} disconnected unexpectedly")
             self._client = None
-
-        def on_notify_data(gatt_char: BleakGATTCharacteristic, data: bytearray):
-            print(f"Device {self._device.address} received {len(data)} bytes")
-            self.update_device_from_bytes(data)
 
         if isinstance(self._client, BleakClient) and self._client.is_connected:
             return self._client
@@ -68,7 +64,7 @@ class RunChickenDevice:
             disconnected_callback=on_disconnect,
         )
         self._device.address = self._client.address
-        self._device.name = self._client.name
+        #self._device.name = self._client.name
 
 
         return self._client
@@ -116,6 +112,7 @@ class RunChickenDevice:
 
     async def update_device(self, ble_device: BLEDevice) -> RunChickenDeviceData:
         """ Connects to the device with BLE and retrieves data """
+        _LOGGER.debug(f"Polling device {ble_device.address}")
         self._client = await self._get_client(ble_device)
         values = await self._poll_values()
         self._update_device_from_values(values)
