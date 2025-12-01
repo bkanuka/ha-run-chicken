@@ -19,10 +19,10 @@ from homeassistant.helpers.device_registry import (
 )
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, CoordinatorEntity
 
-from run_chicken.const import DOMAIN
-from run_chicken.run_chicken_ble.cover import RunChickenCover
-from run_chicken.run_chicken_ble.models import RunChickenDeviceData
-from run_chicken.run_chicken_ble.models import RunChickenDoorState
+from .const import DOMAIN
+from .run_chicken_ble.cover import RunChickenCover
+from .run_chicken_ble.models import RunChickenDeviceData
+from .run_chicken_ble.models import RunChickenDoorState
 
 _LOGGER = logging.getLogger(__name__)
 

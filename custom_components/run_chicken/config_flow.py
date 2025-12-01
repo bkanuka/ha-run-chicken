@@ -16,7 +16,7 @@ from homeassistant.config_entries import ConfigFlow
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.data_entry_flow import FlowResult
 
-from run_chicken.run_chicken_ble import RunChickenDeviceData, RunChickenDevice
+from .run_chicken_ble import RunChickenDeviceData, RunChickenDevice
 from .const import (
     DOMAIN, MANUFACTURER_ID
 )

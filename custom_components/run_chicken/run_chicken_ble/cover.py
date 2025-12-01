@@ -4,8 +4,8 @@ import logging
 from bleak import BleakClient, BLEDevice
 from bleak_retry_connector import establish_connection, retry_bluetooth_connection_error
 
-from run_chicken.run_chicken_ble.const import WRITE_CHAR_UUID
-from run_chicken.run_chicken_ble.create_packet import create_packet
+from .const import WRITE_CHAR_UUID
+from .create_packet import create_packet
 
 _LOGGER = logging.getLogger(__name__)
 

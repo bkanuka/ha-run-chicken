@@ -26,9 +26,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import UpdateFailed, DataUpdateCoordinator
 
-from run_chicken.run_chicken_ble.parser import RunChickenDevice
-from run_chicken.const import DEFAULT_SCAN_INTERVAL, EVENT_DEBOUNCE_TIME, DOMAIN
-from run_chicken.run_chicken_ble.models import RunChickenDeviceData
+from .run_chicken_ble.parser import RunChickenDevice
+from .const import DEFAULT_SCAN_INTERVAL, EVENT_DEBOUNCE_TIME, DOMAIN
+from .run_chicken_ble.models import RunChickenDeviceData
 
 _LOGGER = logging.getLogger(__name__)
 

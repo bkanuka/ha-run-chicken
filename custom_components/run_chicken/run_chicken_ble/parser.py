@@ -12,8 +12,8 @@ from bleak_retry_connector import (
     retry_bluetooth_connection_error,
 )
 
-from run_chicken.run_chicken_ble.const import READ_CHAR_UUID
-from run_chicken.run_chicken_ble.models import RunChickenDeviceData, RunChickenDoorState
+from .const import READ_CHAR_UUID
+from .models import RunChickenDeviceData, RunChickenDoorState
 
 _LOGGER = logging.getLogger(__name__)
 
