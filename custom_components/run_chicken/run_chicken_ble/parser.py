@@ -11,6 +11,7 @@ from bleak_retry_connector import (
     establish_connection,
     retry_bluetooth_connection_error,
 )
+from homeassistant.helpers.update_coordinator import UpdateFailed
 
 from .const import READ_CHAR_UUID
 from .models import RunChickenDeviceData, RunChickenDoorState
@@ -53,7 +54,7 @@ class RunChickenDevice:
         """Get the client from the ble device."""
 
         def on_disconnect(client):
-            _LOGGER.warning(f"Device {self._device.address} disconnected unexpectedly")
+            _LOGGER.warning(f"Device {client.address} disconnected unexpectedly")
             self._client = None
 
         if ble_device.address != self._device.address:
@@ -69,6 +70,8 @@ class RunChickenDevice:
             ble_device.address,
             disconnected_callback=on_disconnect,
         )
+        if self._client is None:
+            raise UpdateFailed("Failed to establish connection to device.")
         self._device.address = self._client.address
 
         return self._client
@@ -113,10 +116,17 @@ class RunChickenDevice:
         return self._device
 
 
-    async def update_device(self, ble_device: BLEDevice) -> RunChickenDeviceData:
+    async def update_device(self, ble_device: BLEDevice | None = None) -> RunChickenDeviceData:
         """ Connects to the device with BLE and retrieves data """
-        _LOGGER.debug(f"Polling device {ble_device.address}")
-        self._client = await self._get_client(ble_device)
+        if ble_device is None:
+            if self._client is None:
+                raise UpdateFailed("No BLE device provided and no existing client.")
+            else:
+                _LOGGER.debug("Using existing client to update device.")
+        else:
+            _LOGGER.debug(f"Updating device with new BLE device: {ble_device}")
+            self._client = await self._get_client(ble_device)
+
         values = await self._poll_values()
         self._update_device_from_values(values)
         return self._device

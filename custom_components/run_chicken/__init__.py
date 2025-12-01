@@ -59,16 +59,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         ble_device = async_ble_device_from_address(hass, address, connectable=True)
         if not ble_device:
-            raise UpdateFailed(
-                f"Could not find Run-Chicken device with address {address}"
-            )
-        _LOGGER.debug("Run-Chicken BLE device is %s", ble_device)
+            _LOGGER.info(f"Could not find Run-Chicken device with address {address}. Using existing client.")
 
-        try:
-            data: RunChickenDeviceData = await run_chicken.update_device(ble_device)
-        except Exception as err:
-            raise UpdateFailed(f"Unable to fetch data: {err}") from err
-
+        data: RunChickenDeviceData = await run_chicken.update_device(ble_device)
         return data
 
 
