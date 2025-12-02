@@ -23,9 +23,10 @@ from homeassistant.components.bluetooth import (
 )
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, EVENT_DEBOUNCE_TIME
+from .const import DEFAULT_SCAN_INTERVAL, DOMAIN
 from .run_chicken_ble.parser import RunChickenDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -50,21 +51,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up BLE device from a config entry."""
     hass.data.setdefault(DOMAIN, {})
     address = entry.unique_id
-    assert address is not None
+    if address is None:
+        msg = "No address found for Run-Chicken device."
+        raise ConfigEntryNotReady(msg)
     entry.async_on_unload(entry.add_update_listener(update_listener))
 
     _LOGGER.debug("Run-Chicken device address %s", address)
     run_chicken = RunChickenDevice()
     scan_interval = DEFAULT_SCAN_INTERVAL
 
-    async def _async_update_method():
+    async def _async_update_method() -> RunChickenDeviceData:
         """Get data from Run-Chicken BLE."""
         _LOGGER.debug("Running Run-Chicken update method.")
-        _LOGGER.debug(f"Trying to get ble_device with address {address}")
-
         ble_device = async_ble_device_from_address(hass, address, connectable=True)
         if not ble_device:
-            _LOGGER.info(f"Could not find Run-Chicken device with address {address}. Using existing client.")
+            _LOGGER.info("Could not find Run-Chicken device with address %s. "
+                         "Using existing client.", address)
 
         data: RunChickenDeviceData = await run_chicken.update_device(ble_device)
         return data
@@ -88,14 +90,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     # Define and register a Bluetooth event callback to update the data when device start to advertise again
-    def async_handle_bluetooth_event(service_info: BluetoothServiceInfoBleak, change: BluetoothChange) -> None:
+    def async_handle_bluetooth_event(
+            service_info: BluetoothServiceInfoBleak,
+            change: BluetoothChange) -> None:
         """Handle a Bluetooth reconnect event."""
         _LOGGER.debug("BLE event received: %s, change %s", service_info, change)
 
         # Refresh data when device advertising is detected
         _LOGGER.debug("Require coordinator to update the data")
         loop = asyncio.get_running_loop()
-        loop.create_task(coordinator.async_request_refresh())
+        _ = loop.create_task(coordinator.async_request_refresh())
 
 
     async_register_callback(
@@ -105,11 +109,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         BluetoothScanningMode.ACTIVE,
     )
 
-    def notification_callback(gatt_char: BleakGATTCharacteristic, payload: bytearray) -> None:
+    def notification_callback(gatt_char: BleakGATTCharacteristic, payload: bytearray) -> None:  # noqa: ARG001
         """Handle notification data from the device."""
         _LOGGER.debug("Handling notification payload")
         data = run_chicken.update_device_from_bytes(payload)
-        _LOGGER.debug(f"Notification data: {data}")
+        _LOGGER.debug("Notification data: %s", data)
         coordinator.async_set_updated_data(data)
 
     await run_chicken.register_notification_callback(notification_callback)

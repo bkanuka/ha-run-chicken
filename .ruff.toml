@@ -15,6 +15,10 @@ ignore = [
     "ISC001", # incompatible with formatter
 ]
 
+exclude = [
+    "dev/*"
+]
+
 [lint.flake8-pytest-style]
 fixture-parentheses = false
 
