@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import voluptuous as vol
 from homeassistant.components.bluetooth import (
@@ -11,9 +11,11 @@ from homeassistant.components.bluetooth import (
 )
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.const import CONF_ADDRESS
-from homeassistant.data_entry_flow import FlowResult
 
 from .const import DOMAIN, MANUFACTURER_ID
+
+if TYPE_CHECKING:
+    from homeassistant.data_entry_flow import FlowResult
 
 _LOGGER = logging.getLogger(__name__)
 

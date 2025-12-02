@@ -13,27 +13,32 @@ import time
 from datetime import timedelta
 from typing import TYPE_CHECKING
 
-from bleak import BleakGATTCharacteristic, BleakClient
+from bleak import BleakClient, BleakGATTCharacteristic
 from bleak_retry_connector import establish_connection
-from homeassistant.components.bluetooth import BluetoothScanningMode
 from homeassistant.components.bluetooth import (
-    async_ble_device_from_address, async_register_callback, BluetoothCallbackMatcher,
+    BluetoothCallbackMatcher,
+    BluetoothScanningMode,
+    async_ble_device_from_address,
+    async_register_callback,
 )
-from homeassistant.components.bluetooth.models import BluetoothServiceInfoBleak, BluetoothChange
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers.update_coordinator import UpdateFailed, DataUpdateCoordinator
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
+from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, EVENT_DEBOUNCE_TIME
 from .run_chicken_ble.parser import RunChickenDevice
-from .const import DEFAULT_SCAN_INTERVAL, EVENT_DEBOUNCE_TIME, DOMAIN
-from .run_chicken_ble.models import RunChickenDeviceData
 
 _LOGGER = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from homeassistant.components.bluetooth.models import (
+        BluetoothChange,
+        BluetoothServiceInfoBleak,
+    )
+    from homeassistant.config_entries import ConfigEntry
     from homeassistant.core import HomeAssistant
+
+    from .run_chicken_ble.models import RunChickenDeviceData
 
 PLATFORMS: list[Platform] = [
     Platform.COVER,
@@ -53,7 +58,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     scan_interval = DEFAULT_SCAN_INTERVAL
 
     async def _async_update_method():
-        """ Get data from Run-Chicken BLE. """
+        """Get data from Run-Chicken BLE."""
         _LOGGER.debug("Running Run-Chicken update method.")
         _LOGGER.debug(f"Trying to get ble_device with address {address}")
 
@@ -100,9 +105,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         BluetoothScanningMode.ACTIVE,
     )
 
-    def notification_callback(gatt_char: BleakGATTCharacteristic, payload: bytearray):
+    def notification_callback(gatt_char: BleakGATTCharacteristic, payload: bytearray) -> None:
         """Handle notification data from the device."""
-        _LOGGER.debug(f"Handling notification payload")
+        _LOGGER.debug("Handling notification payload")
         data = run_chicken.update_device_from_bytes(payload)
         _LOGGER.debug(f"Notification data: {data}")
         coordinator.async_set_updated_data(data)
@@ -119,7 +124,7 @@ async def update_listener(hass: HomeAssistant, entry: ConfigEntry)-> None:
     await hass.config_entries.async_reload(entry.entry_id)
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """ Unload a config entry. """
+    """Unload a config entry."""
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         hass.data[DOMAIN].pop(entry.entry_id)
 
@@ -127,7 +132,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 # Remove entry and assure the device will be disconnected
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """ Handle removal of an entry. """
+    """Handle removal of an entry."""
     address = entry.unique_id
     assert address is not None
     ble_device = async_ble_device_from_address(hass, address)

@@ -5,28 +5,30 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
-from bleak import BLEDevice
 from homeassistant.components.bluetooth import async_ble_device_from_address
 from homeassistant.components.cover import (
     CoverDeviceClass,
     CoverEntity,
     CoverEntityDescription,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.device_registry import (
     CONNECTION_BLUETOOTH,
     DeviceInfo,
 )
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, CoordinatorEntity
+from homeassistant.helpers.update_coordinator import (
+    CoordinatorEntity,
+    DataUpdateCoordinator,
+)
 
 from .const import DOMAIN
 from .run_chicken_ble.cover import RunChickenCover
-from .run_chicken_ble.models import RunChickenDeviceData
-from .run_chicken_ble.models import RunChickenDoorState
+from .run_chicken_ble.models import RunChickenDeviceData, RunChickenDoorState
 
 _LOGGER = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from bleak import BLEDevice
+    from homeassistant.config_entries import ConfigEntry
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -94,9 +96,7 @@ class RunChickenCoverEntity(CoordinatorEntity[DataUpdateCoordinator[RunChickenDe
         """Return None if status is unknown, True if closed, else False."""
         if self.coordinator.data.door_state is RunChickenDoorState.UNKNOWN:
             return None
-        if self.coordinator.data.door_state is RunChickenDoorState.CLOSED:
-            return True
-        return False
+        return self.coordinator.data.door_state is RunChickenDoorState.CLOSED
 
     async def _get_controller(self):
         if self.controller is None or not self.controller.is_connected:

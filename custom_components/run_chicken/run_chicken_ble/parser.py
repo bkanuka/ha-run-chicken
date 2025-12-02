@@ -3,9 +3,9 @@ from __future__ import annotations
 import asyncio
 import logging
 import struct
-from typing import Callable, Awaitable
+from typing import TYPE_CHECKING
 
-from bleak import BLEDevice, BleakClient, BleakScanner, BleakGATTCharacteristic
+from bleak import BleakClient, BleakScanner, BLEDevice
 from bleak_retry_connector import (
     BleakClientWithServiceCache,
     establish_connection,
@@ -15,6 +15,9 @@ from homeassistant.helpers.update_coordinator import UpdateFailed
 
 from .const import READ_CHAR_UUID
 from .models import RunChickenDeviceData, RunChickenDoorState
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,7 +36,7 @@ READ_VALUES = {
 
 class RunChickenDevice:
 
-    def __init__(self, client: BleakClient | None = None, device: RunChickenDeviceData = None):
+    def __init__(self, client: BleakClient | None = None, device: RunChickenDeviceData = None) -> None:
         super().__init__()
         self._client: BleakClient | None = client
 
@@ -46,14 +49,14 @@ class RunChickenDevice:
     def address(self):
         return self._client.address
 
-    async def register_notification_callback(self, callback: Callable):
+    async def register_notification_callback(self, callback: Callable) -> None:
         read_char = self._client.services.get_characteristic(READ_CHAR_UUID)
         await self._client.start_notify(read_char, callback)
 
     async def _get_client(self, ble_device: BLEDevice) -> BleakClient:
         """Get the client from the ble device."""
 
-        def on_disconnect(client):
+        def on_disconnect(client) -> None:
             _LOGGER.warning(f"Device {client.address} disconnected unexpectedly")
             self._client = None
 
@@ -71,7 +74,8 @@ class RunChickenDevice:
             disconnected_callback=on_disconnect,
         )
         if self._client is None:
-            raise UpdateFailed("Failed to establish connection to device.")
+            msg = "Failed to establish connection to device."
+            raise UpdateFailed(msg)
         self._device.address = self._client.address
 
         return self._client
@@ -89,7 +93,7 @@ class RunChickenDevice:
 
         return values
 
-    def _update_device_from_values(self, values: dict[str, int | float]):
+    def _update_device_from_values(self, values: dict[str, int | float]) -> None:
         _LOGGER.debug("Updating device with values: %s", values)
 
         for k, v in values.items():
@@ -100,7 +104,7 @@ class RunChickenDevice:
 
     @retry_bluetooth_connection_error()
     async def _poll_values(self) -> dict[str, int | float]:
-        """ Poll device for new values """
+        """Poll device for new values."""
         char = self._client.services.get_characteristic(READ_CHAR_UUID)
         payload: bytearray = await self._client.read_gatt_char(char)
 
@@ -108,7 +112,7 @@ class RunChickenDevice:
 
 
     def update_device_from_bytes(self, payload: bytes | bytearray) -> RunChickenDeviceData:
-        """ Update the device from a bytes payload. """
+        """Update the device from a bytes payload."""
         _LOGGER.debug(f"Updating device from bytes: {payload.hex()}")
 
         values = self._parse_payload(payload)
@@ -117,12 +121,12 @@ class RunChickenDevice:
 
 
     async def update_device(self, ble_device: BLEDevice | None = None) -> RunChickenDeviceData:
-        """ Connects to the device with BLE and retrieves data """
+        """Connects to the device with BLE and retrieves data."""
         if ble_device is None:
             if self._client is None:
-                raise UpdateFailed("No BLE device provided and no existing client.")
-            else:
-                _LOGGER.debug("Using existing client to update device.")
+                msg = "No BLE device provided and no existing client."
+                raise UpdateFailed(msg)
+            _LOGGER.debug("Using existing client to update device.")
         else:
             _LOGGER.debug(f"Updating device with new BLE device: {ble_device}")
             self._client = await self._get_client(ble_device)
@@ -132,17 +136,15 @@ class RunChickenDevice:
         return self._device
 
 
-async def test_update_device(test_addr: str):
+async def test_update_device(test_addr: str) -> None:
     ble_device = await BleakScanner.find_device_by_address(test_addr, timeout=10.0)
 
     if not ble_device:
-        print(f"Device with address {test_addr} not found.")
         return
 
     parser = RunChickenDevice()
-    device: RunChickenDeviceData = await parser.update_device(ble_device)
+    await parser.update_device(ble_device)
 
-    print(device)
 
 
 if __name__ == "__main__":

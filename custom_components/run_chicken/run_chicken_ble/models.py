@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import dataclasses
-from enum import Enum
-from typing import Optional
 import datetime as dt
+from enum import Enum
 
 
 class RunChickenDoorState(Enum):
@@ -13,10 +12,10 @@ class RunChickenDoorState(Enum):
 
 @dataclasses.dataclass
 class RunChickenDeviceData:
-    """ Response data with information about the RunChicken device. """
+    """Response data with information about the RunChicken device."""
 
-    model: Optional[str] = "T-50"
-    manufacturer: Optional[str] = "Run-Chicken"
+    model: str | None = "T-50"
+    manufacturer: str | None = "Run-Chicken"
     name: str = ""
     identifier: str = ""
     address: str = ""
@@ -32,5 +31,5 @@ class RunChickenDeviceData:
 @dataclasses.dataclass
 class RunChickenDeviceUpdate:
     door_state: RunChickenDoorState
-    datetime: dt.datetime = dt.datetime.now(tz=dt.timezone.utc)
+    datetime: dt.datetime = dt.datetime.now(tz=dt.UTC)
 
