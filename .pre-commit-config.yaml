@@ -1,0 +1,9 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Pin to a specific tag to ensure reproducible installs.
+    # You can update this periodically to get the latest fixes/features.
+    rev: v0.6.9
+    hooks:
+      - id: ruff-format
+      - id: ruff
+        args: ["--fix", "--show-fixes"]
