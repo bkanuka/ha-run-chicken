@@ -11,6 +11,7 @@ from homeassistant.components.cover import (
     CoverEntity,
     CoverEntityDescription,
 )
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.device_registry import (
     CONNECTION_BLUETOOTH,
     DeviceInfo,
@@ -48,7 +49,9 @@ async def async_setup_entry(
 ) -> None:
     """Set up the Run-Chicken cover control."""
     address = entry.unique_id
-    assert address is not None
+    if address is None:
+        msg = "No address found in config entry unique_id for Run-Chicken device."
+        raise ConfigEntryNotReady(msg)
     ble_device = async_ble_device_from_address(hass, address)
     coordinator: DataUpdateCoordinator[RunChickenDeviceData] = hass.data[DOMAIN][entry.entry_id]
     entities = []
@@ -61,7 +64,8 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class RunChickenCoverEntity(CoordinatorEntity[DataUpdateCoordinator[RunChickenDeviceData]], CoverEntity):
+class RunChickenCoverEntity(
+    CoordinatorEntity[DataUpdateCoordinator[RunChickenDeviceData]], CoverEntity):
     """Run Chicken Cover."""
 
     _attr_device_class = CoverDeviceClass.DOOR
@@ -98,21 +102,35 @@ class RunChickenCoverEntity(CoordinatorEntity[DataUpdateCoordinator[RunChickenDe
             return None
         return self.coordinator.data.door_state is RunChickenDoorState.CLOSED
 
-    async def _get_controller(self):
+    async def _get_controller(self) -> RunChickenCover:
         if self.controller is None or not self.controller.is_connected:
             self.controller = await RunChickenCover.from_ble_device(self.ble_device)
         return self.controller
 
-    async def async_open_cover(self, **kwargs: Any) -> None:
+    async def async_open_cover(self, **kwargs: Any) -> None:  #noqa: ARG002
+        """
+        Open the coop door via the BLE controller.
+
+        Ensures a connected `RunChickenCover` controller exists, then sends
+        the open command to the device.
+        """
         await self._get_controller()
         await self.controller.open_cover()
 
-    async def async_close_cover(self, **kwargs: Any) -> None:
+    async def async_close_cover(self, **kwargs: Any) -> None:  #noqa: ARG002
+        """
+        Close the coop door via the BLE controller.
+
+        Ensures a connected `RunChickenCover` controller exists, then sends
+        the close command to the device.
+        """
         await self._get_controller()
         await self.controller.close_cover()
 
-    def _handle_coordinator_update(self, *args: Any) -> None:
+    def _handle_coordinator_update(self) -> None:
         """Handle data update."""
-        _LOGGER.debug(f"Received data update from coordinator: {self.coordinator.data}")
-        self._attr_is_closed = (self.coordinator.data.door_state is RunChickenDoorState.CLOSED)
+        _LOGGER.debug(
+            "Received data update from coordinator: %s", self.coordinator.data)
+        self._attr_is_closed = \
+            (self.coordinator.data.door_state is RunChickenDoorState.CLOSED)
         self.async_write_ha_state()

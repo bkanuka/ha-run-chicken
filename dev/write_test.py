@@ -8,7 +8,7 @@ ADDR = "00:80:e1:22:43:0d"
 CHARACTERISTIC_UUID = "00000000-8e22-4541-9d4c-21edae82ed19"
 
 
-async def main(open_door: bool = False, close_door: bool = False) -> None:  # noqa: FBT001 FBT002
+async def main() -> None:  # noqa: FBT001 FBT002
     """Test writing to the Run-Chicken BLE device."""
     async with BleakClient(ADDR) as client:
         packet = create_close_packet()
@@ -18,6 +18,4 @@ async def main(open_door: bool = False, close_door: bool = False) -> None:  # no
 if __name__ == "__main__":
     asyncio.run(
         main(
-            open_door=True,
-            close_door=False
         ))

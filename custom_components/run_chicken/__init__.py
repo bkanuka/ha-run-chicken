@@ -99,8 +99,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # Refresh data when device advertising is detected
         _LOGGER.debug("Require coordinator to update the data")
         loop = asyncio.get_running_loop()
-        _ = loop.create_task(coordinator.async_request_refresh())
-
+        loop.create_task(coordinator.async_request_refresh())  #noqa: RUF006
 
     async_register_callback(
         hass,
@@ -109,6 +108,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         BluetoothScanningMode.ACTIVE,
     )
 
+    # noinspection PyUnusedLocal
     def notification_callback(gatt_char: BleakGATTCharacteristic, payload: bytearray) -> None:  # noqa: ARG001
         """Handle notification data from the device."""
         _LOGGER.debug("Handling notification payload")
@@ -138,7 +138,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Handle removal of an entry."""
     address = entry.unique_id
-    assert address is not None
+    if address is None:
+        msg = "No address found for Run-Chicken device during removal."
+        raise ValueError(msg)
     ble_device = async_ble_device_from_address(hass, address)
     client = await establish_connection(BleakClient, ble_device, ble_device.address)
     await client.disconnect()
