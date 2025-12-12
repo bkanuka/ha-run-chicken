@@ -33,12 +33,10 @@ if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-ENTITY_DESCRIPTIONS = (
-    CoverEntityDescription(
-        key="run_chicken",
-        name="Run Chicken Cover",
-        device_class=CoverDeviceClass.DOOR,
-    )
+ENTITY_DESCRIPTIONS = CoverEntityDescription(
+    key="run_chicken",
+    name="Run Chicken Cover",
+    device_class=CoverDeviceClass.DOOR,
 )
 
 
@@ -57,15 +55,12 @@ async def async_setup_entry(
     entities = []
     _LOGGER.debug("Got cover: %s", coordinator.data)
 
-    entities.append(
-        RunChickenCoverEntity(coordinator, coordinator.data, ble_device)
-    )
+    entities.append(RunChickenCoverEntity(coordinator, coordinator.data, ble_device))
 
     async_add_entities(entities)
 
 
-class RunChickenCoverEntity(
-    CoordinatorEntity[DataUpdateCoordinator[RunChickenDeviceData]], CoverEntity):
+class RunChickenCoverEntity(CoordinatorEntity[DataUpdateCoordinator[RunChickenDeviceData]], CoverEntity):
     """Run Chicken Cover."""
 
     _attr_device_class = CoverDeviceClass.DOOR
@@ -107,7 +102,7 @@ class RunChickenCoverEntity(
             self.controller = await RunChickenCover.from_ble_device(self.ble_device)
         return self.controller
 
-    async def async_open_cover(self, **kwargs: Any) -> None:  #noqa: ARG002
+    async def async_open_cover(self, **kwargs: Any) -> None:  # noqa: ARG002
         """
         Open the coop door via the BLE controller.
 
@@ -117,7 +112,7 @@ class RunChickenCoverEntity(
         await self._get_controller()
         await self.controller.open_cover()
 
-    async def async_close_cover(self, **kwargs: Any) -> None:  #noqa: ARG002
+    async def async_close_cover(self, **kwargs: Any) -> None:  # noqa: ARG002
         """
         Close the coop door via the BLE controller.
 
@@ -129,8 +124,6 @@ class RunChickenCoverEntity(
 
     def _handle_coordinator_update(self) -> None:
         """Handle data update."""
-        _LOGGER.debug(
-            "Received data update from coordinator: %s", self.coordinator.data)
-        self._attr_is_closed = \
-            (self.coordinator.data.door_state is RunChickenDoorState.CLOSED)
+        _LOGGER.debug("Received data update from coordinator: %s", self.coordinator.data)
+        self._attr_is_closed = self.coordinator.data.door_state is RunChickenDoorState.CLOSED
         self.async_write_ha_state()

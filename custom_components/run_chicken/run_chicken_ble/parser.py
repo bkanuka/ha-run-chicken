@@ -22,15 +22,12 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-DOOR_STATUS_PARSER = {
-    0: RunChickenDoorState.OPEN,
-    1: RunChickenDoorState.CLOSED
-}
+DOOR_STATUS_PARSER = {0: RunChickenDoorState.OPEN, 1: RunChickenDoorState.CLOSED}
 
 READ_VALUES = {
     "door_state": {
         "format": "17xB",  # Skip 17 bytes and read 1 byte as unsigned char
-        "parser": lambda x: DOOR_STATUS_PARSER[x]
+        "parser": lambda x: DOOR_STATUS_PARSER[x],
     }
 }
 
@@ -38,9 +35,7 @@ READ_VALUES = {
 class RunChickenDevice:
     """Representation of a Run-Chicken BLE device."""
 
-    def __init__(self,
-                 client: BleakClient | None = None,
-                 device: RunChickenDeviceData = None) -> None:
+    def __init__(self, client: BleakClient | None = None, device: RunChickenDeviceData = None) -> None:
         """Initialize the Run-Chicken device."""
         super().__init__()
         self._client: BleakClient | None = client
@@ -73,10 +68,7 @@ class RunChickenDevice:
         if isinstance(self._client, BleakClient) and self._client.is_connected:
             return self._client
 
-        _LOGGER.debug(
-            "Getting BleakClient for Run-Chicken door: %s",
-            ble_device.address
-        )
+        _LOGGER.debug("Getting BleakClient for Run-Chicken door: %s", ble_device.address)
         self._client = await establish_connection(
             BleakClientWithServiceCache,
             ble_device,
@@ -120,9 +112,7 @@ class RunChickenDevice:
 
         return self._parse_payload(payload)
 
-    def update_device_from_bytes(self,
-                                 payload: bytes | bytearray
-                                 ) -> RunChickenDeviceData:
+    def update_device_from_bytes(self, payload: bytes | bytearray) -> RunChickenDeviceData:
         """Update the device from a bytes payload."""
         _LOGGER.debug("Updating device from bytes: %s", payload.hex())
 
@@ -130,9 +120,7 @@ class RunChickenDevice:
         self._update_device_from_values(values)
         return self._device
 
-    async def update_device(self,
-                            ble_device: BLEDevice | None = None
-                            ) -> RunChickenDeviceData:
+    async def update_device(self, ble_device: BLEDevice | None = None) -> RunChickenDeviceData:
         """Connect to the device with BLE and retrieve data."""
         if ble_device is None:
             if self._client is None:

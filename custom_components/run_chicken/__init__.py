@@ -47,6 +47,7 @@ PLATFORMS: list[Platform] = [
 
 last_event_time = time.time()
 
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up BLE device from a config entry."""
     hass.data.setdefault(DOMAIN, {})
@@ -65,19 +66,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.debug("Running Run-Chicken update method.")
         ble_device = async_ble_device_from_address(hass, address, connectable=True)
         if not ble_device:
-            _LOGGER.info("Could not find Run-Chicken device with address %s. "
-                         "Using existing client.", address)
+            _LOGGER.info("Could not find Run-Chicken device with address %s. Using existing client.", address)
 
         data: RunChickenDeviceData = await run_chicken.update_device(ble_device)
         return data
 
-
     _LOGGER.debug("Polling interval is set to: %s seconds", scan_interval)
 
     # Create Coordinator
-    coordinator = hass.data.setdefault(DOMAIN, {})[
-        entry.entry_id
-    ] = DataUpdateCoordinator(
+    coordinator = hass.data.setdefault(DOMAIN, {})[entry.entry_id] = DataUpdateCoordinator(
         hass,
         _LOGGER,
         name=DOMAIN,
@@ -90,16 +87,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     # Define and register a Bluetooth event callback to update the data when device start to advertise again
-    def async_handle_bluetooth_event(
-            service_info: BluetoothServiceInfoBleak,
-            change: BluetoothChange) -> None:
+    def async_handle_bluetooth_event(service_info: BluetoothServiceInfoBleak, change: BluetoothChange) -> None:
         """Handle a Bluetooth reconnect event."""
         _LOGGER.debug("BLE event received: %s, change %s", service_info, change)
 
         # Refresh data when device advertising is detected
         _LOGGER.debug("Require coordinator to update the data")
         loop = asyncio.get_running_loop()
-        loop.create_task(coordinator.async_request_refresh())  #noqa: RUF006
+        loop.create_task(coordinator.async_request_refresh())  # noqa: RUF006
 
     async_register_callback(
         hass,
@@ -122,10 +117,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 # Reload entry when options are updated
-async def update_listener(hass: HomeAssistant, entry: ConfigEntry)-> None:
+async def update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Handle options update."""
     _LOGGER.debug("Updated options %s", entry.options)
     await hass.config_entries.async_reload(entry.entry_id)
+
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
@@ -133,6 +129,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN].pop(entry.entry_id)
 
     return unload_ok
+
 
 # Remove entry and assure the device will be disconnected
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:

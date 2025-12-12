@@ -13,6 +13,7 @@ class RunChickenDoorState(Enum):
     OPEN = 1
     CLOSED = 2
 
+
 @dataclasses.dataclass
 class RunChickenDeviceData:
     """Response data with information about the RunChicken device."""

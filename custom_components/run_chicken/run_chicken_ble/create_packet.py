@@ -10,14 +10,13 @@ def create_open_packet(packet_time: dt.datetime | None = None) -> bytes:
     """Create a packet for opening the Run-Chicken door."""
     return create_packet(open_door=True, close_door=False, packet_time=packet_time)
 
+
 def create_close_packet(packet_time: dt.datetime | None = None) -> bytes:
     """Create a packet for closing the Run-Chicken door."""
     return create_packet(open_door=False, close_door=True, packet_time=packet_time)
 
-def create_packet(*,
-                  open_door: bool,
-                  close_door: bool,
-                  packet_time: dt.datetime | None = None) -> bytes:
+
+def create_packet(*, open_door: bool, close_door: bool, packet_time: dt.datetime | None = None) -> bytes:
     """Create a packet for the Run-Chicken door."""
     # Ensure only one and only one door command is sent
     if open_door and close_door:
@@ -59,12 +58,9 @@ def create_packet(*,
 
 
 if __name__ == "__main__":
-
     # Convert 4 ints of a Unix timestamp to a datetime object
     test_time = [233, 66, 38, 105]
-    test_time = dt.datetime.fromtimestamp(
-        int.from_bytes(bytes(test_time), byteorder="little"), tz=dt.UTC
-    )
+    test_time = dt.datetime.fromtimestamp(int.from_bytes(bytes(test_time), byteorder="little"), tz=dt.UTC)
     unix_time = int(test_time.timestamp())
 
     packet = create_open_packet(packet_time=test_time)

@@ -1,4 +1,5 @@
 """Config flow for the Run-Chicken integration."""
+
 from __future__ import annotations
 
 import logging
@@ -64,4 +65,3 @@ class RunChickenConfigFlow(ConfigFlow, domain=DOMAIN):
 
         schema = vol.Schema({vol.Required(CONF_ADDRESS): vol.In(options)})
         return self.async_show_form(step_id="user", data_schema=schema)
-

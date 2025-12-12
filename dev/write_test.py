@@ -15,7 +15,6 @@ async def main() -> None:  # noqa: FBT001 FBT002
         await client.write_gatt_char(CHARACTERISTIC_UUID, packet)
         await asyncio.sleep(10)
 
+
 if __name__ == "__main__":
-    asyncio.run(
-        main(
-        ))
+    asyncio.run(main())
