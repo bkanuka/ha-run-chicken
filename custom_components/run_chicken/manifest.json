@@ -1,26 +1,26 @@
 {
   "domain": "run_chicken",
   "name": "Run Chicken",
-  "integration_type": "device",
-  "codeowners": [
-    "@bkanuka"
-  ],
-  "dependencies": [
-    "bluetooth_adapters"
-  ],
   "bluetooth": [
     {
       "manufacturer_id": 43521,
       "connectable": true
     }
   ],
+  "codeowners": [
+    "@bkanuka"
+  ],
   "config_flow": true,
+  "dependencies": [
+    "bluetooth_adapters"
+  ],
   "documentation": "https://github.com/bkanuka/run_chicken",
+  "integration_type": "device",
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/bkanuka/run_chicken/issues",
-  "version": "0.1.0",
+  "loggers": ["run_chicken", "run_chicken.run_chicken_ble"],
   "requirements": [
     "crc8==0.2.1"
   ],
-  "loggers": ["run_chicken", "run_chicken.run_chicken_ble"]
+  "version": "0.1.0"
 }
