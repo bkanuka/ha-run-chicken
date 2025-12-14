@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import time
 from datetime import timedelta
 from typing import TYPE_CHECKING
 
@@ -45,30 +44,34 @@ PLATFORMS: list[Platform] = [
     Platform.COVER,
 ]
 
-last_event_time = time.time()
+type RunChickenConfigEntry = ConfigEntry[RunChickenDevice]
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: RunChickenConfigEntry) -> bool:
     """Set up BLE device from a config entry."""
     hass.data.setdefault(DOMAIN, {})
     address = entry.unique_id
     if address is None:
         msg = "No address found for Run-Chicken device."
         raise ConfigEntryNotReady(msg)
+
+    ble_device = async_ble_device_from_address(hass, address, connectable=True)
+
     entry.async_on_unload(entry.add_update_listener(update_listener))
 
     _LOGGER.debug("Run-Chicken device address %s", address)
-    run_chicken = RunChickenDevice()
+    run_chicken_device = RunChickenDevice(ble_device)
+
+    # Forward the same Run-Chicken device instance to all platforms
+    entry.runtime_data = run_chicken_device
+
     scan_interval = DEFAULT_SCAN_INTERVAL
 
     async def _async_update_method() -> RunChickenDeviceData:
         """Get data from Run-Chicken BLE."""
         _LOGGER.debug("Running Run-Chicken update method.")
-        ble_device = async_ble_device_from_address(hass, address, connectable=True)
-        if not ble_device:
-            _LOGGER.info("Could not find Run-Chicken device with address %s. Using existing client.", address)
 
-        data: RunChickenDeviceData = await run_chicken.update_device(ble_device)
+        data: RunChickenDeviceData = await run_chicken_device.update_device()
         return data
 
     _LOGGER.debug("Polling interval is set to: %s seconds", scan_interval)
@@ -103,15 +106,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         BluetoothScanningMode.ACTIVE,
     )
 
-    # noinspection PyUnusedLocal
     def notification_callback(gatt_char: BleakGATTCharacteristic, payload: bytearray) -> None:  # noqa: ARG001
         """Handle notification data from the device."""
         _LOGGER.debug("Handling notification payload")
-        data = run_chicken.update_device_from_bytes(payload)
+        data = run_chicken_device.update_device_from_bytes(payload)
         _LOGGER.debug("Notification data: %s", data)
         coordinator.async_set_updated_data(data)
 
-    await run_chicken.register_notification_callback(notification_callback)
+    await run_chicken_device.register_notification_callback(notification_callback)
 
     return True
 

@@ -14,8 +14,8 @@ safe to import (no side effects at import time).
 
 import logging
 
-from bleak import BleakClient, BLEDevice
-from bleak_retry_connector import establish_connection, retry_bluetooth_connection_error
+from bleak import BleakClient
+from bleak_retry_connector import retry_bluetooth_connection_error
 
 from .const import WRITE_CHAR_UUID
 from .create_packet import create_close_packet, create_open_packet
@@ -23,7 +23,7 @@ from .create_packet import create_close_packet, create_open_packet
 _LOGGER = logging.getLogger(__name__)
 
 
-class RunChickenCover:
+class RunChickenController:
     """
     Controller for a Run-Chicken coop door over BLE.
 
@@ -42,24 +42,6 @@ class RunChickenCover:
         """
         super().__init__()
         self.client = client
-
-    @classmethod
-    async def from_ble_device(cls, ble_device: BLEDevice) -> "RunChickenCover":
-        """
-        Create a controller from a discovered BLE device.
-
-        Establishes a BLE connection using the device's address and returns
-        a ready-to-use `RunChickenCover`.
-
-        Args:
-            ble_device: The `BLEDevice` to connect to.
-
-        Returns:
-            A connected `RunChickenCover` instance.
-
-        """
-        client = await establish_connection(BleakClient, ble_device, ble_device.address)
-        return cls(client)
 
     @property
     def is_connected(self) -> bool:
