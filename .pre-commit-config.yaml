@@ -6,4 +6,4 @@ repos:
     hooks:
       - id: ruff-format
       - id: ruff
-        args: ["--fix", "--show-fixes"]
+        args: ["--fix", "--unsafe-fixes", "--show-fixes"]

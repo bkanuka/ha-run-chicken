@@ -17,7 +17,7 @@ from .models import RunChickenDeviceData
 from .parser import RunChickenDevice
 
 __all__ = [
+    "RunChickenController",
     "RunChickenDevice",
     "RunChickenDeviceData",
-    "RunChickenController",
 ]
