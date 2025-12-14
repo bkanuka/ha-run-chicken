@@ -56,6 +56,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: RunChickenConfigEntry) -
         raise ConfigEntryNotReady(msg)
 
     ble_device = async_ble_device_from_address(hass, address, connectable=True)
+    if ble_device is None:
+        msg = f"BLE device with address {address} not found."
+        raise ConfigEntryNotReady(msg)
 
     entry.async_on_unload(entry.add_update_listener(update_listener))
 
