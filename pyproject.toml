@@ -11,6 +11,6 @@ dependencies = [
     "homeassistant==2025.2.4",
     "pip>=21.3.1",
     "pre-commit>=4.5.0",
-    "ruff==0.14.6",
+    "ruff==0.14.9",
     "sensor-state-data>=2.20.0",
 ]
