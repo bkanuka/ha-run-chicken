@@ -48,7 +48,7 @@ def resolve_version_from_git_tag() -> str:
         if ref_name:
             tag = ref_name
         else:
-            tag = subprocess.check_output(["git", "describe", "--tags", "--abbrev=0"], text=True).strip()  # noqa: S607,S603
+            tag = subprocess.check_output(["git", "describe", "--tags", "--abbrev=0"], text=True).strip()
 
     except (OSError, subprocess.CalledProcessError):
         return "0.0.0"

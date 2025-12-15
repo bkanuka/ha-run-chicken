@@ -17,6 +17,8 @@ ignore = [
     "PD", # not using pandas
     "INP001",
     "SIM108",
+    "S603",
+    "S607",
 ]
 
 exclude = [
