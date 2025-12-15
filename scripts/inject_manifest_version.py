@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -41,20 +42,18 @@ def resolve_version_from_git_tag() -> str:
 
     Returns the tag without a leading 'v' if present. Falls back to '0.0.0'.
     """
-    import subprocess
-
     try:
         # Prefer the ref name provided by CI
         ref_name = os.environ.get("GITHUB_REF_NAME")
         if ref_name:
             tag = ref_name
         else:
-            tag = subprocess.check_output(["git", "describe", "--tags", "--abbrev=0"], text=True).strip()  # noqa: S607S603
+            tag = subprocess.check_output(["git", "describe", "--tags", "--abbrev=0"], text=True).strip()  # noqa: S607,S603
 
     except (OSError, subprocess.CalledProcessError):
         return "0.0.0"
 
-    return tag[1:] if tag.startswith("v") else tag
+    return tag.removeprefix("v")
 
 
 class CustomHook(BuildHookInterface):  # type: ignore[misc]

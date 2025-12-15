@@ -15,7 +15,8 @@ ignore = [
     "COM812", # incompatible with formatter
     "ISC001", # incompatible with formatter
     "PD", # not using pandas
-    "INP001"
+    "INP001",
+    "SIM108",
 ]
 
 exclude = [
