@@ -1,0 +1,56 @@
+name: Build & Release on Tag
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        run: pipx install uv
+
+      - name: Build sdist & wheel (version injected via Hatch hook)
+        run: |
+          uv build
+
+      - name: Compute version from tag
+        id: ver
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if [[ "$TAG" == v* ]]; then VERSION="${TAG:1}"; else VERSION="$TAG"; fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Create HACS zip with injected manifest
+        run: |
+          python scripts/inject_manifest_version.py --copy-dir . staging_pkg --version "${{ steps.ver.outputs.version }}"
+          (cd staging_pkg && zip -r "ha-run-chicken-${{ steps.ver.outputs.version }}.zip" custom_components)
+          mkdir -p dist
+          mv staging_pkg/ha-run-chicken-*.zip dist/
+
+      - name: List artifacts
+        run: ls -lah dist
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+            dist/*.zip
