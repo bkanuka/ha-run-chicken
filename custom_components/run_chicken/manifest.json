@@ -1,6 +1,6 @@
 {
   "domain": "run_chicken",
-  "name": "Run Chicken",
+  "name": "Run-Chicken",
   "bluetooth": [
     {
       "manufacturer_id": 43521,
@@ -25,5 +25,5 @@
   "requirements": [
     "crc8==0.2.1"
   ],
-  "version": "0.8.0"
+  "version": "0.0.0"
 }

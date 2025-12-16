@@ -1,4 +1,29 @@
-"""Injects the current version into manifest.json."""
+"""
+Inject git tag into manifest.json.
+
+A utility module for handling version injection into a manifest.json file and managing build hooks
+for Home Assistant custom integrations.
+
+This module provides a Hatch build hook (CustomHook) for version injection into
+`manifest.json`, resolving versions from Git tags when operating outside of Hatch, and
+a CLI for creating zip releases with the computed version values.
+
+The exported functionality includes:
+- Resolving versions based on Git tags.
+- Injecting version data into `manifest.json`.
+- A CLI entry point for performing version injection.
+
+Classes:
+- CustomHook: A custom build hook for Hatch to inject computed version into `manifest.json`.
+
+Functions:
+- resolve_version_from_git_tag: Resolves the integration version, falling back to `0.0.0`
+  when no Git tag is available.
+- _cli: Handles the command-line interface for direct invocation of the versioning process.
+
+Constants:
+- MANIFEST_REL_PATH: Relative path to the `manifest.json` file within a Home Assistant custom component.
+"""
 
 import argparse
 import json
@@ -11,7 +36,8 @@ from pathlib import Path
 try:
     # Available during Hatch builds
     from hatchling.builders.hooks.plugin.interface import BuildHookInterface
-except Exception:  # noqa: BLE001
+except ImportError:
+    # Not available outside Hatch so we have CustomHook use object as its base class
     BuildHookInterface = object  # type: ignore[misc,assignment]
 
 
@@ -72,18 +98,16 @@ class CustomHook(BuildHookInterface):  # type: ignore[misc]
         """
         # "version" passed to this function only tells you the _kind_ of build: "standard"
         version = self.metadata.version
-        Path(self.root)  # type: ignore[attr-defined]
 
-        src_manifest = MANIFEST_REL_PATH
-
-        _inject_version(src_manifest, version)
+        _inject_version(MANIFEST_REL_PATH, version)
 
         # Force-include the modified manifest at the same relative path
         force_include = build_data.setdefault("force_include", {})
-        force_include[str(MANIFEST_REL_PATH)] = str(src_manifest)
+        force_include[str(MANIFEST_REL_PATH)] = str(MANIFEST_REL_PATH)
 
 
 def _cli(argv: list[str]) -> int:
+    """CLI entrypoint used by GitHub Actions to create a zip release."""
     parser = argparse.ArgumentParser(description="Inject version into Home Assistant manifest.json")
     parser.add_argument("--version", help="Version to inject; if omitted, derived from git tag.")
     group = parser.add_mutually_exclusive_group(required=True)
