@@ -104,6 +104,8 @@ class RunChickenCoverEntity(CoordinatorEntity[DataUpdateCoordinator[RunChickenDe
         Ensures a connected `RunChickenCover` controller exists, then sends
         the open command to the device.
         """
+        await self.run_chicken_device.ensure_client_connected()
+        self.controller.client = self.run_chicken_device.client
         await self.controller.open_cover()
 
     async def async_close_cover(self, **kwargs: Any) -> None:  # noqa: ARG002
@@ -113,6 +115,8 @@ class RunChickenCoverEntity(CoordinatorEntity[DataUpdateCoordinator[RunChickenDe
         Ensures a connected `RunChickenCover` controller exists, then sends
         the close command to the device.
         """
+        await self.run_chicken_device.ensure_client_connected()
+        self.controller.client = self.run_chicken_device.client
         await self.controller.close_cover()
 
     def _handle_coordinator_update(self) -> None:
