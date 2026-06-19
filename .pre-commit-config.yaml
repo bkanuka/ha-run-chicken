@@ -1,8 +1,8 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    # Pin to a specific tag to ensure reproducible installs.
-    # You can update this periodically to get the latest fixes/features.
-    rev: v0.14.9
+    # pre-commit requires a concrete tag; keep it current with
+    # `pre-commit autoupdate`.
+    rev: v0.15.18
     hooks:
       - id: ruff-check
         args: ["--fix", "--unsafe-fixes", "--show-fixes"]
