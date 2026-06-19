@@ -868,14 +868,10 @@ dependencies = [
     { name = "colorlog" },
     { name = "crc8" },
     { name = "homeassistant" },
-    { name = "sensor-state-data" },
-]
-
-[package.dev-dependencies]
-dev = [
     { name = "pip" },
     { name = "pre-commit" },
     { name = "ruff" },
+    { name = "sensor-state-data" },
     { name = "ty" },
 ]
 
@@ -887,14 +883,10 @@ requires-dist = [
     { name = "colorlog", specifier = ">=6.10.1" },
     { name = "crc8", specifier = ">=0.2.1" },
     { name = "homeassistant", specifier = ">=2026.6.4" },
-    { name = "sensor-state-data", specifier = ">=2.20.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
     { name = "pip", specifier = ">=21.3.1" },
     { name = "pre-commit", specifier = ">=4.5.0" },
     { name = "ruff", specifier = ">=0.15" },
+    { name = "sensor-state-data", specifier = ">=2.20.0" },
     { name = "ty", specifier = ">=0.0.51" },
 ]
 

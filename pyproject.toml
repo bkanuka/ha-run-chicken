@@ -4,6 +4,10 @@ version = "0.0.0"
 description = "Home Assistant integration for the Run-Chicken automatic chicken door"
 readme = "README.md"
 requires-python = ">=3.14.2"
+# This project is not a published package: HACS ships custom_components/run_chicken
+# directly and Home Assistant resolves the integration's runtime requirements from
+# manifest.json. pyproject only describes the local development environment, so the
+# integration's imports and the dev tooling live together in one list.
 dependencies = [
     "bleak>=2.0.0",
     "bleak-retry-connector>=4.4.4",
@@ -11,19 +15,13 @@ dependencies = [
     "colorlog>=6.10.1",
     "crc8>=0.2.1",
     "homeassistant>=2026.6.4",
-    "sensor-state-data>=2.20.0",
-]
-
-[dependency-groups]
-dev = [
     "pip>=21.3.1",
     "pre-commit>=4.5.0",
     "ruff>=0.15",
+    "sensor-state-data>=2.20.0",
     "ty>=0.0.51",
 ]
 
-# This is a Home Assistant / HACS integration, not a Python package: HACS ships
-# custom_components/run_chicken directly and never installs a wheel. Tell uv not
-# to build or install the project itself; it only manages the dev environment.
+# Don't build or install the project itself; uv only manages the dev environment.
 [tool.uv]
 package = false
