@@ -55,12 +55,3 @@ def create_packet(*, open_door: bool, close_door: bool, packet_time: dt.datetime
     packet += struct.pack("<B", crc.digest()[0])
 
     return packet
-
-
-if __name__ == "__main__":
-    # Convert 4 ints of a Unix timestamp to a datetime object
-    test_time = [233, 66, 38, 105]
-    test_time = dt.datetime.fromtimestamp(int.from_bytes(bytes(test_time), byteorder="little"), tz=dt.UTC)
-    unix_time = int(test_time.timestamp())
-
-    packet = create_open_packet(packet_time=test_time)
