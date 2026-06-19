@@ -836,6 +836,8 @@ name = "ha-run-chicken"
 version = "0.0.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "bleak" },
+    { name = "bleak-retry-connector" },
     { name = "bluetooth-sensor-state-data" },
     { name = "colorlog" },
     { name = "crc8" },
@@ -852,6 +854,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "bleak", specifier = ">=2.0.0" },
+    { name = "bleak-retry-connector", specifier = ">=4.4.4" },
     { name = "bluetooth-sensor-state-data", specifier = ">=1.9.0" },
     { name = "colorlog", specifier = ">=6.10.1" },
     { name = "crc8", specifier = ">=0.2.1" },

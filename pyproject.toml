@@ -5,6 +5,8 @@ description = "Home Assistant integration for the Run-Chicken automatic chicken 
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "bleak>=2.0.0",
+    "bleak-retry-connector>=4.4.4",
     "bluetooth-sensor-state-data>=1.9.0",
     "colorlog>=6.10.1",
     "crc8>=0.2.1",
