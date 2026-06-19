@@ -865,9 +865,9 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "bluetooth-sensor-state-data", specifier = ">=1.9.0" },
-    { name = "colorlog", specifier = "==6.10.1" },
+    { name = "colorlog", specifier = ">=6.10.1" },
     { name = "crc8", specifier = ">=0.2.1" },
-    { name = "homeassistant", specifier = "==2025.2.4" },
+    { name = "homeassistant", specifier = ">=2025.2.4" },
     { name = "sensor-state-data", specifier = ">=2.20.0" },
 ]
 
@@ -875,7 +875,7 @@ requires-dist = [
 dev = [
     { name = "pip", specifier = ">=21.3.1" },
     { name = "pre-commit", specifier = ">=4.5.0" },
-    { name = "ruff", specifier = "==0.14.9" },
+    { name = "ruff", specifier = ">=0.14.9" },
     { name = "uv-dynamic-versioning", specifier = ">=0.6.0" },
 ]
 
