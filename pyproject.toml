@@ -9,10 +9,14 @@ dependencies = [
     "colorlog==6.10.1",
     "crc8>=0.2.1",
     "homeassistant==2025.2.4",
+    "sensor-state-data>=2.20.0",
+]
+
+[dependency-groups]
+dev = [
     "pip>=21.3.1",
     "pre-commit>=4.5.0",
     "ruff==0.14.9",
-    "sensor-state-data>=2.20.0",
     "uv-dynamic-versioning>=0.6.0",
 ]
 
