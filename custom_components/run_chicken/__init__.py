@@ -127,7 +127,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return unload_ok
 
 
-# Remove entry and assure the device will be disconnected
+# Remove entry and ensure the device will be disconnected
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Handle removal of an entry."""
     address = entry.unique_id
