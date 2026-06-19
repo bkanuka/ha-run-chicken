@@ -15,7 +15,6 @@ dependencies = [
     "colorlog>=6.10.1",
     "crc8>=0.2.1",
     "homeassistant>=2026.6.4",
-    "pip>=21.3.1",
     "pre-commit>=4.5.0",
     "ruff>=0.15",
     "sensor-state-data>=2.20.0",
