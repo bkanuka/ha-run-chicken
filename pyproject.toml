@@ -9,8 +9,8 @@ requires-python = ">=3.14.2"
 # manifest.json. pyproject only describes the local development environment, so the
 # integration's imports and the dev tooling live together in one list.
 dependencies = [
-    "bleak>=2.0.0",
-    "bleak-retry-connector>=4.4.4",
+    "bleak>=3.0.2",
+    "bleak-retry-connector>=4.6.1",
     "bluetooth-sensor-state-data>=1.9.0",
     "colorlog>=6.10.1",
     "crc8>=0.2.1",
