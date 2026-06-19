@@ -19,6 +19,7 @@ dependencies = [
     "ruff>=0.15",
     "sensor-state-data>=2.20.0",
     "ty>=0.0.51",
+    "voluptuous>=0.15.2",
 ]
 
 # Don't build or install the project itself; uv only manages the dev environment.

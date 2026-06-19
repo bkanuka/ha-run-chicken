@@ -877,6 +877,7 @@ dependencies = [
     { name = "ruff" },
     { name = "sensor-state-data" },
     { name = "ty" },
+    { name = "voluptuous" },
 ]
 
 [package.metadata]
@@ -891,6 +892,7 @@ requires-dist = [
     { name = "ruff", specifier = ">=0.15" },
     { name = "sensor-state-data", specifier = ">=2.20.0" },
     { name = "ty", specifier = ">=0.0.51" },
+    { name = "voluptuous", specifier = ">=0.15.2" },
 ]
 
 [[package]]

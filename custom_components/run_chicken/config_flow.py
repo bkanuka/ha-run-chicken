@@ -74,17 +74,15 @@ class RunChickenConfigFlow(ConfigFlow, domain=DOMAIN):
             self._abort_if_unique_id_configured()
             error = await self._async_try_connect(address)
             if error is None:
-                return self.async_create_entry(title=self._discovered_devices.get(address, address), data={})
+                return self.async_create_entry(title=self._discovered_devices[address], data={})
             errors["base"] = error
 
-        # Skip devices already set up or being set up in another in-progress flow.
-        addresses_in_use = self._async_current_ids() | {
-            flow["context"]["unique_id"] for flow in self._async_in_progress() if "unique_id" in flow["context"]
-        }
+        # Skip devices that are already configured.
+        current_addresses = self._async_current_ids()
         self._discovered_devices = {}
         for info in async_discovered_service_info(self.hass):
             address = info.address
-            if address in addresses_in_use or address in self._discovered_devices:
+            if address in current_addresses or address in self._discovered_devices:
                 continue
             if MANUFACTURER_ID not in info.manufacturer_data:
                 continue
@@ -110,6 +108,11 @@ class RunChickenConfigFlow(ConfigFlow, domain=DOMAIN):
             return "cannot_connect"
 
         device = RunChickenDevice(ble_device)
+        # The broad `except Exception` below is a deliberate safety net: a
+        # connectivity probe must never surface a raw traceback in the config
+        # flow, so any unexpected error is reported as "unknown" (mirroring Home
+        # Assistant's own config-flow convention of catch-all -> "unknown").
+        # noinspection PyBroadException
         try:
             await device.ensure_client_connected()
         except (BleakError, TimeoutError):
@@ -119,6 +122,7 @@ class RunChickenConfigFlow(ConfigFlow, domain=DOMAIN):
             _LOGGER.exception("Unexpected error connecting to Run-Chicken device %s", address)
             return "unknown"
         finally:
-            if device.client is not None:
-                await device.client.disconnect()
+            client = device.client
+            if client is not None:
+                await client.disconnect()
         return None
