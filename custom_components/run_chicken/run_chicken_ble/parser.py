@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import struct
 from typing import TYPE_CHECKING
 
 from bleak import BleakClient, BLEDevice
@@ -22,14 +21,9 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-DOOR_STATUS_PARSER = {0: RunChickenDoorState.OPEN, 1: RunChickenDoorState.CLOSED}
-
-READ_VALUES = {
-    "door_state": {
-        "format": "17xB",  # Skip 17 bytes and read 1 byte as unsigned char
-        "parser": lambda x: DOOR_STATUS_PARSER[x],
-    }
-}
+# The read characteristic payload encodes the door state in a single byte at
+# this offset (0 = open, 1 = closed).
+DOOR_STATE_OFFSET = 17
 
 
 class RunChickenDevice:
@@ -103,47 +97,28 @@ class RunChickenDevice:
         return self._client
 
     @staticmethod
-    def _parse_payload(payload: bytearray) -> dict[str, int | float]:
+    def _parse_door_state(payload: bytes | bytearray) -> RunChickenDoorState:
+        """Parse the door state out of a device payload."""
         _LOGGER.debug("Parsing payload: %s", payload.hex())
-
-        values = {}
-        for key, config in READ_VALUES.items():
-            value = struct.unpack(config["format"], payload[:18])[0]
-            if "parser" in config:
-                value = config["parser"](value)
-            values[key] = value
-
-        return values
-
-    def _update_data_from_values(self, values: dict[str, int | float]) -> None:
-        _LOGGER.debug("Updating device with values: %s", values)
-
-        for k, v in values.items():
-            if hasattr(self._device_data, k):
-                setattr(self._device_data, k, v)
-            else:
-                self._device_data.values[k] = v
+        if len(payload) <= DOOR_STATE_OFFSET:
+            _LOGGER.warning("Payload too short to contain door state: %s", payload.hex())
+            return RunChickenDoorState.UNKNOWN
+        return RunChickenDoorState.from_raw(payload[DOOR_STATE_OFFSET])
 
     @retry_bluetooth_connection_error()
-    async def _poll_values(self) -> dict[str, int | float]:
-        """Poll device for new values."""
+    async def _read_payload(self) -> bytearray:
+        """Read the raw payload from the device's read characteristic."""
         char = self._client.services.get_characteristic(READ_CHAR_UUID)
-        payload: bytearray = await self._client.read_gatt_char(char)
-
-        return self._parse_payload(payload)
+        return await self._client.read_gatt_char(char)
 
     def update_device_from_bytes(self, payload: bytes | bytearray) -> RunChickenDeviceData:
         """Update the device from a bytes payload."""
         _LOGGER.debug("Updating device from bytes: %s", payload.hex())
-
-        values = self._parse_payload(payload)
-        self._update_data_from_values(values)
+        self._device_data.door_state = self._parse_door_state(payload)
         return self._device_data
 
     async def update_device(self) -> RunChickenDeviceData:
         """Connect to the device with BLE and retrieve data."""
         await self.ensure_client_connected()
-
-        values = await self._poll_values()
-        self._update_data_from_values(values)
+        self._device_data.door_state = self._parse_door_state(await self._read_payload())
         return self._device_data

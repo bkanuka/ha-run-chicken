@@ -13,6 +13,11 @@ class RunChickenDoorState(Enum):
     OPEN = 1
     CLOSED = 2
 
+    @classmethod
+    def from_raw(cls, raw: int) -> RunChickenDoorState:
+        """Map the device's raw door-state byte (0 = open, 1 = closed) to a state."""
+        return {0: cls.OPEN, 1: cls.CLOSED}.get(raw, cls.UNKNOWN)
+
 
 @dataclasses.dataclass
 class RunChickenDeviceData:
@@ -24,8 +29,6 @@ class RunChickenDeviceData:
     identifier: str = ""
     address: str = ""
     door_state: RunChickenDoorState = RunChickenDoorState.UNKNOWN
-
-    values: dict[str, int | float] = dataclasses.field(default_factory=dict)
 
     def friendly_name(self) -> str:
         """Generate a name for the device."""
