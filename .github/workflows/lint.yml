@@ -42,10 +42,10 @@ jobs:
         uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
         with:
           enable-cache: true
-          # Pin Python 3.13: orjson (pinned transitively by Home Assistant) has
-          # no wheels for 3.14, and building it from sdist fails. requires-python
-          # allows >=3.13, so without this uv would pick the newest interpreter.
-          python-version: "3.13"
+          # Develop/type-check against Python 3.14 (Home Assistant requires
+          # >=3.14.2). Pinning keeps the interpreter deterministic so a future
+          # release without matching dependency wheels can't sneak in.
+          python-version: "3.14"
 
       # ty needs the integration's dependencies to resolve imports, so run it
       # through `uv run` (which syncs the project's .venv first). The version is
