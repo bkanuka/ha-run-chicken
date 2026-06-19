@@ -60,8 +60,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: RunChickenConfigEntry) -
         msg = f"BLE device with address {address} not found."
         raise ConfigEntryNotReady(msg)
 
-    entry.async_on_unload(entry.add_update_listener(update_listener))
-
     _LOGGER.debug("Run-Chicken device address %s", address)
     run_chicken_device = RunChickenDevice(ble_device)
 
@@ -119,13 +117,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: RunChickenConfigEntry) -
     await run_chicken_device.register_notification_callback(notification_callback)
 
     return True
-
-
-# Reload entry when options are updated
-async def update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Handle options update."""
-    _LOGGER.debug("Updated options %s", entry.options)
-    await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
