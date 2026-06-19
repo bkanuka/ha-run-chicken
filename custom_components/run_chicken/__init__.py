@@ -135,5 +135,8 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         msg = "No address found for Run-Chicken device during removal."
         raise ValueError(msg)
     ble_device = async_ble_device_from_address(hass, address)
+    if ble_device is None:
+        _LOGGER.debug("Run-Chicken device %s not available; nothing to disconnect", address)
+        return
     client = await establish_connection(BleakClient, ble_device, ble_device.address)
     await client.disconnect()
