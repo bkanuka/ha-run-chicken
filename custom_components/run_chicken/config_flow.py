@@ -6,11 +6,16 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 import voluptuous as vol
-from homeassistant.components.bluetooth import async_discovered_service_info
+from bleak.exc import BleakError
+from homeassistant.components.bluetooth import (
+    async_ble_device_from_address,
+    async_discovered_service_info,
+)
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_ADDRESS
 
 from .const import DOMAIN, MANUFACTURER_ID
+from .run_chicken_ble import RunChickenDevice
 
 if TYPE_CHECKING:
     from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
@@ -45,23 +50,32 @@ class RunChickenConfigFlow(ConfigFlow, domain=DOMAIN):
         return await self.async_step_bluetooth_confirm()
 
     async def async_step_bluetooth_confirm(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        """Confirm adding a device discovered over bluetooth."""
+        """Confirm adding a device discovered over bluetooth, verifying it is reachable."""
+        errors: dict[str, str] = {}
         if user_input is not None:
-            return self.async_create_entry(title=self._discovery_info.name, data={})
+            error = await self._async_try_connect(self._discovery_info.address)
+            if error is None:
+                return self.async_create_entry(title=self._discovery_info.name, data={})
+            errors["base"] = error
 
         self._set_confirm_only()
         return self.async_show_form(
             step_id="bluetooth_confirm",
             description_placeholders={"name": self._discovery_info.name},
+            errors=errors,
         )
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Show a list of discovered devices and let the user pick one."""
+        errors: dict[str, str] = {}
         if user_input is not None:
             address = user_input[CONF_ADDRESS]
             await self.async_set_unique_id(address, raise_on_progress=False)
             self._abort_if_unique_id_configured()
-            return self.async_create_entry(title=self._discovered_devices[address], data={})
+            error = await self._async_try_connect(address)
+            if error is None:
+                return self.async_create_entry(title=self._discovered_devices.get(address, address), data={})
+            errors["base"] = error
 
         # Skip devices already set up or being set up in another in-progress flow.
         addresses_in_use = self._async_current_ids() | {
@@ -80,4 +94,31 @@ class RunChickenConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="no_devices_found")
 
         schema = vol.Schema({vol.Required(CONF_ADDRESS): vol.In(self._discovered_devices)})
-        return self.async_show_form(step_id="user", data_schema=schema)
+        return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
+
+    async def _async_try_connect(self, address: str) -> str | None:
+        """
+        Probe connectivity to the device at ``address``.
+
+        Establishes a single BLE connection and immediately disconnects, leaving
+        the device free for the entry setup to reconnect. Returns an error key
+        (``cannot_connect``/``unknown``) on failure, or ``None`` on success.
+        """
+        ble_device = async_ble_device_from_address(self.hass, address, connectable=True)
+        if ble_device is None:
+            _LOGGER.debug("No connectable BLE device found for %s", address)
+            return "cannot_connect"
+
+        device = RunChickenDevice(ble_device)
+        try:
+            await device.ensure_client_connected()
+        except (BleakError, TimeoutError):
+            _LOGGER.debug("Could not connect to Run-Chicken device %s", address, exc_info=True)
+            return "cannot_connect"
+        except Exception:
+            _LOGGER.exception("Unexpected error connecting to Run-Chicken device %s", address)
+            return "unknown"
+        finally:
+            if device.client is not None:
+                await device.client.disconnect()
+        return None

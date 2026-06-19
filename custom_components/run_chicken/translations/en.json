@@ -12,6 +12,10 @@
                 "description": "Do you want to set up the Run-Chicken door {name}?"
             }
         },
+        "error": {
+            "cannot_connect": "Failed to connect. Make sure the door is powered on and within Bluetooth range, then try again.",
+            "unknown": "An unexpected error occurred."
+        },
         "abort": {
             "already_configured": "This device is already configured.",
             "not_run_chicken_device": "The discovered device is not a Run-Chicken door.",
