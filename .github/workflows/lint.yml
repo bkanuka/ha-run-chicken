@@ -23,8 +23,10 @@ jobs:
         with:
           enable-cache: true
 
+      # Run only ruff (pinned to match pyproject.toml/.pre-commit). The lint job
+      # doesn't import the project, so avoid a full `uv run` project sync.
       - name: Lint
-        run: uv run ruff check .
+        run: uvx ruff@0.14.9 check .
 
       - name: Format
-        run: uv run ruff format . --check
+        run: uvx ruff@0.14.9 format . --check
