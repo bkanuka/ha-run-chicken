@@ -100,11 +100,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: RunChickenConfigEntry) -
         loop = asyncio.get_running_loop()
         loop.create_task(coordinator.async_request_refresh())  # noqa: RUF006
 
-    async_register_callback(
-        hass,
-        async_handle_bluetooth_event,
-        BluetoothCallbackMatcher(address=address),
-        BluetoothScanningMode.ACTIVE,
+    entry.async_on_unload(
+        async_register_callback(
+            hass,
+            async_handle_bluetooth_event,
+            BluetoothCallbackMatcher(address=address),
+            BluetoothScanningMode.ACTIVE,
+        )
     )
 
     def notification_callback(gatt_char: BleakGATTCharacteristic, payload: bytearray) -> None:  # noqa: ARG001
@@ -116,11 +118,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: RunChickenConfigEntry) -
 
     await run_chicken_device.register_notification_callback(notification_callback)
 
+    # Notifications stop when the door drops the connection, so reconnect on an
+    # unexpected disconnect. The coordinator refresh re-establishes the
+    # connection, which re-subscribes notifications and re-reads the state.
+    def _schedule_reconnect() -> None:
+        _LOGGER.debug("Run-Chicken %s disconnected; scheduling reconnect", address)
+        hass.async_create_task(coordinator.async_request_refresh(), f"{DOMAIN}_reconnect_{address}")
+
+    run_chicken_device.set_disconnect_callback(_schedule_reconnect)
+
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: RunChickenConfigEntry) -> bool:
     """Unload a config entry."""
+    # Stop auto-reconnect and drop the connection before tearing down.
+    await entry.runtime_data.async_disconnect()
+
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         hass.data[DOMAIN].pop(entry.entry_id)
 

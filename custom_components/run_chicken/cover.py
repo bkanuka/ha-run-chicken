@@ -10,7 +10,7 @@ from homeassistant.components.cover import (
     CoverEntity,
     CoverEntityDescription,
 )
-from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError
 from homeassistant.helpers.device_registry import (
     CONNECTION_BLUETOOTH,
     DeviceInfo,
@@ -102,23 +102,31 @@ class RunChickenCoverEntity(CoordinatorEntity[DataUpdateCoordinator[RunChickenDe
             return None
         return self.coordinator.data.door_state is RunChickenDoorState.CLOSED
 
-    async def async_open_cover(self, **kwargs: Any) -> None:  # noqa: ARG002
+    async def _async_ready_controller(self) -> RunChickenController:
         """
-        Open the coop door via the BLE controller.
+        Reconnect if needed and point the controller at the current client.
 
-        Ensures a connected `RunChickenCover` controller exists, then sends
-        the open command to the device.
+        After a disconnect the device builds a fresh client, so the controller's
+        captured client goes stale and writes fail with "characteristic not
+        found". Refreshing it here keeps commands aligned with the live client.
         """
-        await self.controller.open_cover()
+        await self.run_chicken_device.ensure_client_connected()
+        client = self.run_chicken_device.client
+        if client is None:
+            msg = "Run-Chicken device is not connected."
+            raise HomeAssistantError(msg)
+        self.controller.client = client
+        return self.controller
+
+    async def async_open_cover(self, **kwargs: Any) -> None:  # noqa: ARG002
+        """Open the coop door, reconnecting first if the connection dropped."""
+        controller = await self._async_ready_controller()
+        await controller.open_cover()
 
     async def async_close_cover(self, **kwargs: Any) -> None:  # noqa: ARG002
-        """
-        Close the coop door via the BLE controller.
-
-        Ensures a connected `RunChickenCover` controller exists, then sends
-        the close command to the device.
-        """
-        await self.controller.close_cover()
+        """Close the coop door, reconnecting first if the connection dropped."""
+        controller = await self._async_ready_controller()
+        await controller.close_cover()
 
     def _handle_coordinator_update(self) -> None:
         """Handle data update."""

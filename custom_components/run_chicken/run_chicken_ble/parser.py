@@ -40,6 +40,12 @@ class RunChickenDevice:
 
         self.ble_device: BLEDevice = ble_device
         self._client: BleakClient | None = client
+        # Stored so notifications can be re-subscribed on every reconnect.
+        self._notification_callback: Callable | None = None
+        # Invoked on an unexpected disconnect so the owner can reconnect.
+        self._disconnect_callback: Callable[[], None] | None = None
+        # Set during teardown so we don't fight an intentional disconnect.
+        self._expected_disconnect = False
 
         if device_data is None:
             self._device_data: RunChickenDeviceData = RunChickenDeviceData(address=ble_device.address)
@@ -72,22 +78,61 @@ class RunChickenDevice:
             raise UpdateFailed(msg)
         return self._client, char
 
+    def set_disconnect_callback(self, callback: Callable[[], None]) -> None:
+        """
+        Register a callback invoked when the device disconnects unexpectedly.
+
+        Notifications only arrive while connected, so the owner uses this to
+        re-establish the connection (which re-subscribes notifications).
+        """
+        self._disconnect_callback = callback
+
     async def register_notification_callback(self, callback: Callable) -> None:
-        """Register a callback to be called when the device sends a notification."""
-        client, read_char = self._connected_read_char()
-        await client.start_notify(read_char, callback)
+        """
+        Register a callback for device notifications.
+
+        Notifications are only delivered over a live connection, so the callback
+        is stored and automatically re-subscribed whenever the device reconnects.
+        """
+        self._notification_callback = callback
+        await self._async_subscribe_notifications()
+
+    async def _async_subscribe_notifications(self) -> None:
+        """Subscribe the stored notification callback on the current client, if any."""
+        if self._notification_callback is None or self._client is None:
+            return
+        read_char = self._client.services.get_characteristic(READ_CHAR_UUID)
+        if read_char is None:
+            _LOGGER.warning("Read characteristic %s not found; cannot subscribe to notifications", READ_CHAR_UUID)
+            return
+        await self._client.start_notify(read_char, self._notification_callback)
+        _LOGGER.debug("Subscribed to Run-Chicken notifications on %s", self._client.address)
 
     async def ensure_client_connected(self) -> None:
         """Ensure the client is connected."""
         if self._client is None or not self._client.is_connected:
             await self._get_client()
 
+    async def async_disconnect(self) -> None:
+        """Disconnect and suppress auto-reconnect; used during teardown."""
+        self._expected_disconnect = True
+        client = self._client
+        self._client = None
+        if client is not None and client.is_connected:
+            await client.disconnect()
+
     async def _get_client(self) -> BleakClient:
         """Get the client from the ble device."""
+        if self._expected_disconnect:
+            msg = "Run-Chicken device is shutting down."
+            raise UpdateFailed(msg)
 
         def on_disconnect(client: BleakClient) -> None:
             _LOGGER.warning("Device %s disconnected unexpectedly", client.address)
             self._client = None
+            # Notifications die with the connection; ask the owner to reconnect.
+            if not self._expected_disconnect and self._disconnect_callback is not None:
+                self._disconnect_callback()
 
         if self.ble_device.address != self._device_data.address:
             self._client = None
@@ -107,6 +152,9 @@ class RunChickenDevice:
             raise UpdateFailed(msg)
 
         self._device_data.address = self._client.address
+
+        # Re-subscribe notifications so push updates resume after a reconnect.
+        await self._async_subscribe_notifications()
 
         return self._client
 
