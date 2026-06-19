@@ -74,7 +74,12 @@ class RunChickenCoverEntity(CoordinatorEntity[DataUpdateCoordinator[RunChickenDe
         """Initialize the Run-Chicken cover."""
         super().__init__(coordinator)
         self.run_chicken_device: RunChickenDevice = run_chicken_device
-        self.controller: RunChickenController = RunChickenController(client=self.run_chicken_device.client)
+
+        client = run_chicken_device.client
+        if client is None:
+            msg = "Run-Chicken device is not connected; cannot set up cover."
+            raise ConfigEntryNotReady(msg)
+        self.controller: RunChickenController = RunChickenController(client=client)
 
         self._attr_unique_id = f"run_chicken_{self.run_chicken_device.address}"
 

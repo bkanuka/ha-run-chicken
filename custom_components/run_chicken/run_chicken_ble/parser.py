@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from bleak import BleakClient, BLEDevice
+from bleak import BleakClient, BleakGATTCharacteristic, BLEDevice
 from bleak_retry_connector import (
     BleakClientWithServiceCache,
     establish_connection,
@@ -30,7 +30,10 @@ class RunChickenDevice:
     """Representation of a Run-Chicken BLE device."""
 
     def __init__(
-        self, ble_device: BLEDevice, client: BleakClient | None = None, device_data: RunChickenDeviceData = None
+        self,
+        ble_device: BLEDevice,
+        client: BleakClient | None = None,
+        device_data: RunChickenDeviceData | None = None,
     ) -> None:
         """Initialize the Run-Chicken device."""
         super().__init__()
@@ -58,10 +61,21 @@ class RunChickenDevice:
         """Return the device data."""
         return self._device_data
 
+    def _connected_read_char(self) -> tuple[BleakClient, BleakGATTCharacteristic]:
+        """Return the connected client and its read characteristic, or raise."""
+        if self._client is None:
+            msg = "Run-Chicken device is not connected."
+            raise UpdateFailed(msg)
+        char = self._client.services.get_characteristic(READ_CHAR_UUID)
+        if char is None:
+            msg = f"Read characteristic {READ_CHAR_UUID} not found on device."
+            raise UpdateFailed(msg)
+        return self._client, char
+
     async def register_notification_callback(self, callback: Callable) -> None:
         """Register a callback to be called when the device sends a notification."""
-        read_char = self._client.services.get_characteristic(READ_CHAR_UUID)
-        await self._client.start_notify(read_char, callback)
+        client, read_char = self._connected_read_char()
+        await client.start_notify(read_char, callback)
 
     async def ensure_client_connected(self) -> None:
         """Ensure the client is connected."""
@@ -108,8 +122,8 @@ class RunChickenDevice:
     @retry_bluetooth_connection_error()
     async def _read_payload(self) -> bytearray:
         """Read the raw payload from the device's read characteristic."""
-        char = self._client.services.get_characteristic(READ_CHAR_UUID)
-        return await self._client.read_gatt_char(char)
+        client, char = self._connected_read_char()
+        return await client.read_gatt_char(char)
 
     def update_device_from_bytes(self, payload: bytes | bytearray) -> RunChickenDeviceData:
         """Update the device from a bytes payload."""
