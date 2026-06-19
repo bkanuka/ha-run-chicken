@@ -30,3 +30,21 @@ jobs:
 
       - name: Format
         run: uvx ruff format . --check
+
+  ty:
+    name: "ty"
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          enable-cache: true
+
+      # ty needs the integration's dependencies to resolve imports, so run it
+      # through `uv run` (which syncs the project's .venv first). The version is
+      # pinned via the dev dependency group in uv.lock.
+      - name: Type check
+        run: uv run ty check custom_components/

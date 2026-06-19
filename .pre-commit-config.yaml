@@ -7,3 +7,15 @@ repos:
       - id: ruff-check
         args: ["--fix", "--unsafe-fixes", "--show-fixes"]
       - id: ruff-format
+  - repo: local
+    hooks:
+      - id: ty
+        name: ty
+        # Run ty from the uv project so it type-checks against the
+        # integration's installed dependencies (resolved via .venv). Uses the
+        # ty version pinned in the dev dependency group / uv.lock.
+        entry: uv run ty check custom_components/
+        language: system
+        types: [python]
+        pass_filenames: false
+        require_serial: true
