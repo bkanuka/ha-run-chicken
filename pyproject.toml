@@ -1,7 +1,7 @@
 [project]
 name = "ha-run-chicken"
-description = "Add your description here"
-dynamic = ["version"]
+version = "0.0.0"
+description = "Home Assistant integration for the Run-Chicken automatic chicken door"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -17,30 +17,10 @@ dev = [
     "pip>=21.3.1",
     "pre-commit>=4.5.0",
     "ruff>=0.15",
-    "uv-dynamic-versioning>=0.6.0",
 ]
 
-[build-system]
-requires = [
-    "hatchling>=1.25.0",
-    "uv-dynamic-versioning>=0.6.0",
-]
-build-backend = "hatchling.build"
-
-[tool.hatch.version]
-source = "uv-dynamic-versioning"
-
-[tool.hatch.build]
-include = [
-    "custom_components",
-    "scripts/inject_manifest_version.py",
-]
-
-[tool.uv-dynamic-versioning]
-fallback-version = "0.0.0"
-
-[tool.hatch.build.hooks.custom]
-path = "scripts/inject_manifest_version.py"
-
+# This is a Home Assistant / HACS integration, not a Python package: HACS ships
+# custom_components/run_chicken directly and never installs a wheel. Tell uv not
+# to build or install the project itself; it only manages the dev environment.
 [tool.uv]
-cache-keys = [{ file = "pyproject.toml" }, { git = { commit = true, tags = true }}]
+package = false

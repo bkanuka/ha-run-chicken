@@ -14,34 +14,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.13'
-
-      - name: Install uv
-        run: pipx install uv
-
-      - name: Build sdist & wheel (version injected via Hatch hook)
-        run: |
-          uv build
 
       - name: Compute version from tag
         id: ver
-        run: |
-          TAG="${GITHUB_REF_NAME}"
-          if [[ "$TAG" == v* ]]; then VERSION="${TAG:1}"; else VERSION="$TAG"; fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
-      - name: Create HACS zip with injected manifest
+      - name: Stamp manifest version and build HACS zip
         run: |
-          python scripts/inject_manifest_version.py --copy-dir . staging_pkg --version "${{ steps.ver.outputs.version }}"
-          (cd staging_pkg && zip -r "ha-run-chicken-${{ steps.ver.outputs.version }}.zip" custom_components)
+          python3 scripts/inject_manifest_version.py --version "${{ steps.ver.outputs.version }}"
           mkdir -p dist
-          mv staging_pkg/ha-run-chicken-*.zip dist/
+          # HACS extracts the zip directly into custom_components/run_chicken,
+          # so the integration files must sit at the root of the archive.
+          (cd custom_components/run_chicken && zip -r "${GITHUB_WORKSPACE}/dist/ha-run-chicken.zip" .)
 
       - name: List artifacts
         run: ls -lah dist
@@ -50,7 +34,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
-          files: |
-            dist/*.whl
-            dist/*.tar.gz
-            dist/*.zip
+          files: dist/ha-run-chicken.zip

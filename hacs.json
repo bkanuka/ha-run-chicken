@@ -1,5 +1,7 @@
 {
     "name": "Run-Chicken",
     "homeassistant": "2025.2.4",
-    "hacs": "2.0.5"
+    "hacs": "2.0.5",
+    "zip_release": true,
+    "filename": "ha-run-chicken.zip"
 }

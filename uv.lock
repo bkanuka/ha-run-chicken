@@ -680,18 +680,6 @@ wheels = [
 ]
 
 [[package]]
-name = "dunamai"
-version = "1.25.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "packaging" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/f1/2f/194d9a34c4d831c6563d2d990720850f0baef9ab60cb4ad8ae0eff6acd34/dunamai-1.25.0.tar.gz", hash = "sha256:a7f8360ea286d3dbaf0b6a1473f9253280ac93d619836ad4514facb70c0719d1", size = 46155, upload-time = "2025-07-04T19:25:56.082Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/36/41/04e2a649058b0713b00d6c9bd22da35618bb157289e05d068e51fddf8d7e/dunamai-1.25.0-py3-none-any.whl", hash = "sha256:7f9dc687dd3256e613b6cc978d9daabfd2bb5deb8adc541fc135ee423ffa98ab", size = 27022, upload-time = "2025-07-04T19:25:54.863Z" },
-]
-
-[[package]]
 name = "envs"
 version = "1.4"
 source = { registry = "https://pypi.org/simple" }
@@ -845,7 +833,8 @@ wheels = [
 
 [[package]]
 name = "ha-run-chicken"
-source = { editable = "." }
+version = "0.0.0"
+source = { virtual = "." }
 dependencies = [
     { name = "bluetooth-sensor-state-data" },
     { name = "colorlog" },
@@ -859,7 +848,6 @@ dev = [
     { name = "pip" },
     { name = "pre-commit" },
     { name = "ruff" },
-    { name = "uv-dynamic-versioning" },
 ]
 
 [package.metadata]
@@ -876,7 +864,6 @@ dev = [
     { name = "pip", specifier = ">=21.3.1" },
     { name = "pre-commit", specifier = ">=4.5.0" },
     { name = "ruff", specifier = ">=0.15" },
-    { name = "uv-dynamic-versioning", specifier = ">=0.6.0" },
 ]
 
 [[package]]
@@ -947,21 +934,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/4b/04/ef1b3ef338d233e7c2b265594c22e325e6d8a68750baa339103e985a8602/hass_nabucasa-0.92.0.tar.gz", hash = "sha256:ea926736f79319b086efb5ee247ad32c855c206958d881331b0591de82cf07a3", size = 72177, upload-time = "2025-02-14T08:36:28.895Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b8/6c/7d96499d5ebdf928aa7325dcaefcded2e250bf652bdaf420e54c34869284/hass_nabucasa-0.92.0-py3-none-any.whl", hash = "sha256:1ddf9ebcbdbd789870fce6347b2cdc444872212d7972a3eb548bbf9f3679aa9d", size = 61897, upload-time = "2025-02-14T08:36:26.775Z" },
-]
-
-[[package]]
-name = "hatchling"
-version = "1.28.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "packaging" },
-    { name = "pathspec" },
-    { name = "pluggy" },
-    { name = "trove-classifiers" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/0b/8e/e480359492affde4119a131da729dd26da742c2c9b604dff74836e47eef9/hatchling-1.28.0.tar.gz", hash = "sha256:4d50b02aece6892b8cd0b3ce6c82cb218594d3ec5836dbde75bf41a21ab004c8", size = 55365, upload-time = "2025-11-27T00:31:13.766Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/0d/a5/48cb7efb8b4718b1a4c0c331e3364a3a33f614ff0d6afd2b93ee883d3c47/hatchling-1.28.0-py3-none-any.whl", hash = "sha256:dc48722b68b3f4bbfa3ff618ca07cdea6750e7d03481289ffa8be1521d18a961", size = 76075, upload-time = "2025-11-27T00:31:12.544Z" },
 ]
 
 [[package]]
@@ -1312,15 +1284,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pathspec"
-version = "0.12.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/ca/bc/f35b8446f4531a7cb215605d100cd88b7ac6f44ab3fc94870c120ab3adbf/pathspec-0.12.1.tar.gz", hash = "sha256:a482d51503a1ab33b1c67a6c3813a26953dbdc71c31dacaef9a838c4e29f5712", size = 51043, upload-time = "2023-12-10T22:30:45Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/cc/20/ff623b09d963f88bfde16306a54e12ee5ea43e9b597108672ff3a408aad6/pathspec-0.12.1-py3-none-any.whl", hash = "sha256:a0d503e138a4c123b27490a4f7beda6a01c6f288df0e4a8b79c7eb0dc7b4cc08", size = 31191, upload-time = "2023-12-10T22:30:43.14Z" },
-]
-
-[[package]]
 name = "pillow"
 version = "11.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1363,15 +1326,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/cf/86/0248f086a84f01b37aaec0fa567b397df1a119f73c16f6c7a9aac73ea309/platformdirs-4.5.1.tar.gz", hash = "sha256:61d5cdcc6065745cdd94f0f878977f8de9437be93de97c1c12f853c9c0cdcbda", size = 21715, upload-time = "2025-12-05T13:52:58.638Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/cb/28/3bfe2fa5a7b9c46fe7e13c97bda14c895fb10fa2ebf1d0abb90e0cea7ee1/platformdirs-4.5.1-py3-none-any.whl", hash = "sha256:d03afa3963c806a9bed9d5125c8f4cb2fdaf74a55ab60e5d59b3fde758104d31", size = 18731, upload-time = "2025-12-05T13:52:56.823Z" },
-]
-
-[[package]]
-name = "pluggy"
-version = "1.6.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f9/e2/3e91f31a7d2b083fe6ef3fa267035b518369d9511ffab804f839851d2779/pluggy-1.6.0.tar.gz", hash = "sha256:7dcc130b76258d33b90f61b658791dede3486c3e6bfb003ee5c9bfb396dd22f3", size = 69412, upload-time = "2025-05-15T12:30:07.975Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/54/20/4d324d65cc6d9205fabedc306948156824eb9f0ee1633355a8f7ec5c66bf/pluggy-1.6.0-py3-none-any.whl", hash = "sha256:e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746", size = 20538, upload-time = "2025-05-15T12:30:06.134Z" },
 ]
 
 [[package]]
@@ -1845,24 +1799,6 @@ wheels = [
 ]
 
 [[package]]
-name = "tomlkit"
-version = "0.13.3"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/cc/18/0bbf3884e9eaa38819ebe46a7bd25dcd56b67434402b66a58c4b8e552575/tomlkit-0.13.3.tar.gz", hash = "sha256:430cf247ee57df2b94ee3fbe588e71d362a941ebb545dec29b53961d61add2a1", size = 185207, upload-time = "2025-06-05T07:13:44.947Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/bd/75/8539d011f6be8e29f339c42e633aae3cb73bffa95dd0f9adec09b9c58e85/tomlkit-0.13.3-py3-none-any.whl", hash = "sha256:c89c649d79ee40629a9fda55f8ace8c6a1b42deb912b2a8fd8d942ddadb606b0", size = 38901, upload-time = "2025-06-05T07:13:43.546Z" },
-]
-
-[[package]]
-name = "trove-classifiers"
-version = "2025.12.1.14"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/80/e1/000add3b3e0725ce7ee0ea6ea4543f1e1d9519742f3b2320de41eeefa7c7/trove_classifiers-2025.12.1.14.tar.gz", hash = "sha256:a74f0400524fc83620a9be74a07074b5cbe7594fd4d97fd4c2bfde625fdc1633", size = 16985, upload-time = "2025-12-01T14:47:11.456Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/4f/7e/bc19996fa86cad8801e8ffe6f1bba5836ca0160df76d0410d27432193712/trove_classifiers-2025.12.1.14-py3-none-any.whl", hash = "sha256:a8206978ede95937b9959c3aff3eb258bbf7b07dff391ddd4ea7e61f316635ab", size = 14184, upload-time = "2025-12-01T14:47:10.113Z" },
-]
-
-[[package]]
 name = "typing-extensions"
 version = "4.15.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1946,21 +1882,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/a5/2d/74df7f292a7c15269bacd451a492520e26c4ef99b19c01fe96913506dea5/uv-0.5.21-py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:f5ba5076b6b69161d318f5ddeff6dd935ab29a157ff10dd8756ed6dcb5d0a497", size = 16042115, upload-time = "2025-01-17T21:16:02.864Z" },
     { url = "https://files.pythonhosted.org/packages/4b/69/03731b38d23e7bed653f186be2ff2dfcdcef29a611f4937ff4bacff205fe/uv-0.5.21-py3-none-win32.whl", hash = "sha256:34944204a39b840fa0efb2ba27f4decce50115460c6b8e4e6ade6aae6246d0cf", size = 15262952, upload-time = "2025-01-17T21:16:07.306Z" },
     { url = "https://files.pythonhosted.org/packages/c2/8d/f6508e3c3fbc76b945365062ffff9fa6e60ad6516b26dae23a1c761d65c0/uv-0.5.21-py3-none-win_amd64.whl", hash = "sha256:36f21534a9e00a85cc532ef9575d3785a4e434a25daa93e51ebc08b54ade4991", size = 16625459, upload-time = "2025-01-17T21:16:10.678Z" },
-]
-
-[[package]]
-name = "uv-dynamic-versioning"
-version = "0.12.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "dunamai" },
-    { name = "hatchling" },
-    { name = "jinja2" },
-    { name = "tomlkit" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/ac/ae/66c95eca70db2a0d01212f05c6cb589e0668532daad10bbbf434f82ccfe7/uv_dynamic_versioning-0.12.0.tar.gz", hash = "sha256:e853e0c5b2425a68005580325d4975a8c37b66015589ca45ef96e660fe0f8f16", size = 41499, upload-time = "2025-12-14T00:47:40.774Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b4/8b/1dace94e7786f40e5cbcebb3a43365832798e497bbbb7281557cef72cb4c/uv_dynamic_versioning-0.12.0-py3-none-any.whl", hash = "sha256:2d2f1fb806c2e351d0d0a3840aaf7b3c6ce73757080b1ada4ac5dc44f7dd4c9e", size = 11477, upload-time = "2025-12-14T00:47:39.305Z" },
 ]
 
 [[package]]
