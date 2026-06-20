@@ -15,14 +15,11 @@ from homeassistant.helpers.device_registry import (
     CONNECTION_BLUETOOTH,
     DeviceInfo,
 )
-from homeassistant.helpers.update_coordinator import (
-    CoordinatorEntity,
-    DataUpdateCoordinator,
-)
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .coordinator import RunChickenCoordinator
 from .run_chicken_ble.cover import RunChickenController
-from .run_chicken_ble.models import RunChickenDeviceData, RunChickenDoorState
+from .run_chicken_ble.models import RunChickenDoorState
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,7 +27,7 @@ if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-    from . import RunChickenConfigEntry, RunChickenDevice
+    from . import RunChickenConfigEntry
 
 ENTITY_DESCRIPTIONS = CoverEntityDescription(
     key="run_chicken",
@@ -40,46 +37,31 @@ ENTITY_DESCRIPTIONS = CoverEntityDescription(
 
 
 async def async_setup_entry(
-    hass: HomeAssistant,
+    _hass: HomeAssistant,
     entry: RunChickenConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the Run-Chicken cover control."""
-    address = entry.unique_id
-    if address is None:
-        msg = "No address found in config entry unique_id for Run-Chicken device."
-        raise ConfigEntryNotReady(msg)
-    coordinator: DataUpdateCoordinator[RunChickenDeviceData] = hass.data[DOMAIN][entry.entry_id]
-
-    run_chicken_device: RunChickenDevice = entry.runtime_data
-
-    entities = []
+    coordinator = entry.runtime_data
     _LOGGER.debug("Setting up Run-Chicken cover with data: %s", coordinator.data)
-
-    entities.append(RunChickenCoverEntity(run_chicken_device, coordinator))
-
-    async_add_entities(entities)
+    async_add_entities([RunChickenCoverEntity(coordinator)])
 
 
-class RunChickenCoverEntity(CoordinatorEntity[DataUpdateCoordinator[RunChickenDeviceData]], CoverEntity):
+class RunChickenCoverEntity(CoordinatorEntity[RunChickenCoordinator], CoverEntity):
     """Run Chicken Cover."""
 
     _attr_device_class = CoverDeviceClass.DOOR
 
-    def __init__(
-        self,
-        run_chicken_device: RunChickenDevice,
-        coordinator: DataUpdateCoordinator[RunChickenDeviceData],
-    ) -> None:
+    def __init__(self, coordinator: RunChickenCoordinator) -> None:
         """Initialize the Run-Chicken cover."""
         super().__init__(coordinator)
-        self.run_chicken_device: RunChickenDevice = run_chicken_device
+        self.run_chicken_device = coordinator.device
 
-        client = run_chicken_device.client
+        client = self.run_chicken_device.client
         if client is None:
             msg = "Run-Chicken device is not connected; cannot set up cover."
             raise ConfigEntryNotReady(msg)
-        self.controller: RunChickenController = RunChickenController(client=client)
+        self.controller = RunChickenController(client=client)
 
         self._attr_unique_id = f"run_chicken_{self.run_chicken_device.address}"
 

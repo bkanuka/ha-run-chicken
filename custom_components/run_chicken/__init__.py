@@ -7,48 +7,33 @@ https://github.com/bkanuka/ha-run-chicken
 
 from __future__ import annotations
 
-import asyncio
 import logging
-from datetime import timedelta
 from typing import TYPE_CHECKING
 
-from bleak import BleakClient, BleakGATTCharacteristic
+from bleak import BleakClient
 from bleak_retry_connector import establish_connection
-from homeassistant.components.bluetooth import (
-    BluetoothCallbackMatcher,
-    BluetoothScanningMode,
-    async_ble_device_from_address,
-    async_register_callback,
-)
+from homeassistant.components.bluetooth import async_ble_device_from_address
 from homeassistant.const import Platform
 from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN
+from .coordinator import RunChickenCoordinator
 from .run_chicken_ble.parser import RunChickenDevice
 
 _LOGGER = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from homeassistant.components.bluetooth import (
-        BluetoothChange,
-        BluetoothServiceInfoBleak,
-    )
     from homeassistant.config_entries import ConfigEntry
     from homeassistant.core import HomeAssistant
-
-    from .run_chicken_ble.models import RunChickenDeviceData
 
 PLATFORMS: list[Platform] = [
     Platform.COVER,
 ]
 
-type RunChickenConfigEntry = ConfigEntry[RunChickenDevice]
+type RunChickenConfigEntry = ConfigEntry[RunChickenCoordinator]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: RunChickenConfigEntry) -> bool:
-    """Set up BLE device from a config entry."""
-    hass.data.setdefault(DOMAIN, {})
+    """Set up a Run-Chicken door from a config entry."""
     address = entry.unique_id
     if address is None:
         msg = "No address found for Run-Chicken device."
@@ -59,89 +44,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: RunChickenConfigEntry) -
         msg = f"BLE device with address {address} not found."
         raise ConfigEntryNotReady(msg)
 
-    _LOGGER.debug("Run-Chicken device address %s", address)
-    run_chicken_device = RunChickenDevice(ble_device)
-
-    # Forward the same Run-Chicken device instance to all platforms
-    entry.runtime_data = run_chicken_device
-
-    scan_interval = DEFAULT_SCAN_INTERVAL
-
-    async def _async_update_method() -> RunChickenDeviceData:
-        """Get data from Run-Chicken BLE."""
-        _LOGGER.debug("Running Run-Chicken update method.")
-
-        data: RunChickenDeviceData = await run_chicken_device.update_device()
-        return data
-
-    _LOGGER.debug("Polling interval is set to: %s seconds", scan_interval)
-
-    # Create Coordinator
-    coordinator = hass.data.setdefault(DOMAIN, {})[entry.entry_id] = DataUpdateCoordinator(
-        hass,
-        _LOGGER,
-        name=DOMAIN,
-        update_method=_async_update_method,
-        update_interval=timedelta(seconds=scan_interval),
-    )
-
-    await coordinator.async_config_entry_first_refresh()
+    _LOGGER.debug("Setting up Run-Chicken device %s", address)
+    door_coordinator = RunChickenCoordinator(hass, entry, RunChickenDevice(ble_device))
+    await door_coordinator.async_init()
+    entry.runtime_data = door_coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
-    # Refresh the coordinator whenever the door advertises (e.g. after it drops
-    # the connection), which reconnects and re-subscribes notifications.
-    # BluetoothChange is a functional Enum (Enum("BluetoothChange", ...)) that
-    # PyCharm can't use as a type annotation, though the hint is correct for ty.
-    # noinspection PyTypeHints
-    def async_handle_bluetooth_event(service_info: BluetoothServiceInfoBleak, change: BluetoothChange) -> None:
-        """Handle a Bluetooth advertisement event by refreshing the coordinator."""
-        _LOGGER.debug("BLE event received: %s, change %s", service_info, change)
-
-        # Refresh data when device advertising is detected
-        _LOGGER.debug("Require coordinator to update the data")
-        loop = asyncio.get_running_loop()
-        loop.create_task(coordinator.async_request_refresh())  # noqa: RUF006
-
-    entry.async_on_unload(
-        async_register_callback(
-            hass,
-            async_handle_bluetooth_event,
-            BluetoothCallbackMatcher(address=address),
-            BluetoothScanningMode.ACTIVE,
-        )
-    )
-
-    def notification_callback(_gatt_char: BleakGATTCharacteristic, payload: bytearray) -> None:
-        """Handle notification data from the device."""
-        _LOGGER.debug("Handling notification payload")
-        data = run_chicken_device.update_device_from_bytes(payload)
-        _LOGGER.debug("Notification data: %s", data)
-        coordinator.async_set_updated_data(data)
-
-    await run_chicken_device.register_notification_callback(notification_callback)
-
-    # Notifications stop when the door drops the connection, so reconnect on an
-    # unexpected disconnect. The coordinator refresh re-establishes the
-    # connection, which re-subscribes notifications and re-reads the state.
-    def _schedule_reconnect() -> None:
-        _LOGGER.debug("Run-Chicken %s disconnected; scheduling reconnect", address)
-        hass.async_create_task(coordinator.async_request_refresh(), f"{DOMAIN}_reconnect_{address}")
-
-    run_chicken_device.set_disconnect_callback(_schedule_reconnect)
-
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: RunChickenConfigEntry) -> bool:
     """Unload a config entry."""
     # Stop auto-reconnect and drop the connection before tearing down.
-    await entry.runtime_data.async_disconnect()
-
-    if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
-        hass.data[DOMAIN].pop(entry.entry_id)
-
-    return unload_ok
+    await entry.runtime_data.device.async_disconnect()
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
 # Remove entry and ensure the device will be disconnected
