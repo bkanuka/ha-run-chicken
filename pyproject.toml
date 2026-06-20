@@ -14,6 +14,9 @@ dependencies = [
     "bluetooth-sensor-state-data>=1.9.0",
     "colorlog>=6.10.1",
     "crc8>=0.2.1",
+    # Not imported directly, but Home Assistant's bluetooth component pins this;
+    # align the dev env so the bluetooth stack matches what HA actually runs.
+    "habluetooth>=6.8.1",
     "homeassistant>=2026.6.4",
     "pre-commit>=4.6.0",
     "ruff>=0.15",
