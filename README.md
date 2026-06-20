@@ -9,7 +9,7 @@ Home Assistant integration for the Run‑Chicken Automatic Chicken Door
 ## 🐔 Overview
 
 `ha-run-chicken` is a custom Home Assistant component to control [Run‑Chicken](https://run-chicken.com/doors/t50/) automatic chicken coop doors via Bluetooth.
-It has been tested with the T50 model (Bluetooth version) but should work with other Run‑Chicken Bluetooth models.
+It has been tested with the T50 model (Bluetooth version) but should work with other Run‑Chicken Bluetooth models. The GIANT model is also supported; the door model is detected automatically from its Bluetooth advertisement.
 
 This is a local push integration — it communicates directly with the door via Bluetooth and does not require cloud access or an internet connection.
 

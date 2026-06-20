@@ -14,8 +14,8 @@ from bleak_retry_connector import (
 from homeassistant.helpers.update_coordinator import UpdateFailed
 
 from .const import READ_CHAR_UUID, WRITE_CHAR_UUID
-from .create_packet import create_close_packet, create_open_packet
 from .models import RunChickenDeviceData, RunChickenDoorState
+from .protocol import RunChickenProtocol
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -47,11 +47,18 @@ class RunChickenDevice:
         self._disconnect_callback: Callable[[], None] | None = None
         # Set during teardown so we don't fight an intentional disconnect.
         self._expected_disconnect = False
+        # The GIANT needs a session-init "hello" once per connection before its
+        # first command; reset to False whenever a new connection is made.
+        self._session_initialized = False
 
         if device_data is None:
             self._device_data: RunChickenDeviceData = RunChickenDeviceData(address=ble_device.address)
         else:
             self._device_data: RunChickenDeviceData = device_data
+
+        # Pick the command-frame protocol from the advertised name (T-50 vs GIANT).
+        self._protocol = RunChickenProtocol.for_advertised_name(ble_device.name)
+        self._device_data.model = self._protocol.model
 
     @property
     def address(self) -> str:
@@ -152,6 +159,10 @@ class RunChickenDevice:
             msg = "Failed to establish connection to device."
             raise UpdateFailed(msg)
 
+        # Fresh connection: the GIANT's session-init must be re-sent before the
+        # next command.
+        self._session_initialized = False
+
         self._device_data.address = self._client.address
 
         # Re-subscribe notifications so push updates resume after a reconnect.
@@ -189,15 +200,30 @@ class RunChickenDevice:
     @retry_bluetooth_connection_error()
     async def async_open(self) -> None:
         """Open the Run-Chicken door."""
-        await self._async_send_command(create_open_packet())
+        await self._async_send_command(self._protocol.create_open_packet())
 
     @retry_bluetooth_connection_error()
     async def async_close(self) -> None:
         """Close the Run-Chicken door."""
-        await self._async_send_command(create_close_packet())
+        await self._async_send_command(self._protocol.create_close_packet())
 
     async def _async_send_command(self, packet: bytes) -> None:
         """Connect if needed and write a command packet to the door."""
         await self.ensure_client_connected()
+        await self._async_ensure_session_init()
         client = self._require_client()
         await client.write_gatt_char(WRITE_CHAR_UUID, packet)
+
+    async def _async_ensure_session_init(self) -> None:
+        """
+        Send the GIANT's session-init "hello" once per connection.
+
+        The official app sends this packet right after connecting, before any
+        command. It is a no-op for models that don't need it (the T-50).
+        """
+        if not self._protocol.needs_session_init or self._session_initialized:
+            return
+        client = self._require_client()
+        await client.write_gatt_char(WRITE_CHAR_UUID, self._protocol.create_session_init_packet())
+        self._session_initialized = True
+        _LOGGER.debug("Sent %s session-init packet to %s", self._protocol.model, client.address)
