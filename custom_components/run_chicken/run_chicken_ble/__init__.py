@@ -12,12 +12,10 @@ Safe to import: no side effects at import time. The explicit `__all__`
 defines the public surface of the package.
 """
 
-from .cover import RunChickenController
 from .models import RunChickenDeviceData
 from .parser import RunChickenDevice
 
 __all__ = [
-    "RunChickenController",
     "RunChickenDevice",
     "RunChickenDeviceData",
 ]

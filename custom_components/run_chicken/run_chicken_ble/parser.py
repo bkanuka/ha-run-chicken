@@ -13,7 +13,8 @@ from bleak_retry_connector import (
 )
 from homeassistant.helpers.update_coordinator import UpdateFailed
 
-from .const import READ_CHAR_UUID
+from .const import READ_CHAR_UUID, WRITE_CHAR_UUID
+from .create_packet import create_close_packet, create_open_packet
 from .models import RunChickenDeviceData, RunChickenDoorState
 
 if TYPE_CHECKING:
@@ -53,11 +54,6 @@ class RunChickenDevice:
             self._device_data: RunChickenDeviceData = device_data
 
     @property
-    def client(self) -> BleakClient | None:
-        """Return the BLE client."""
-        return self._client
-
-    @property
     def address(self) -> str:
         """Return the BLE address of the device."""
         return self._device_data.address
@@ -67,16 +63,21 @@ class RunChickenDevice:
         """Return the device data."""
         return self._device_data
 
-    def _connected_read_char(self) -> tuple[BleakClient, BleakGATTCharacteristic]:
-        """Return the connected client and its read characteristic, or raise."""
+    def _require_client(self) -> BleakClient:
+        """Return the connected client, or raise if not connected."""
         if self._client is None:
             msg = "Run-Chicken device is not connected."
             raise UpdateFailed(msg)
-        char = self._client.services.get_characteristic(READ_CHAR_UUID)
+        return self._client
+
+    def _connected_read_char(self) -> tuple[BleakClient, BleakGATTCharacteristic]:
+        """Return the connected client and its read characteristic, or raise."""
+        client = self._require_client()
+        char = client.services.get_characteristic(READ_CHAR_UUID)
         if char is None:
             msg = f"Read characteristic {READ_CHAR_UUID} not found on device."
             raise UpdateFailed(msg)
-        return self._client, char
+        return client, char
 
     def set_disconnect_callback(self, callback: Callable[[], None]) -> None:
         """
@@ -184,3 +185,19 @@ class RunChickenDevice:
         await self.ensure_client_connected()
         self._device_data.door_state = self._parse_door_state(await self._read_payload())
         return self._device_data
+
+    @retry_bluetooth_connection_error()
+    async def async_open(self) -> None:
+        """Open the Run-Chicken door."""
+        await self._async_send_command(create_open_packet())
+
+    @retry_bluetooth_connection_error()
+    async def async_close(self) -> None:
+        """Close the Run-Chicken door."""
+        await self._async_send_command(create_close_packet())
+
+    async def _async_send_command(self, packet: bytes) -> None:
+        """Connect if needed and write a command packet to the door."""
+        await self.ensure_client_connected()
+        client = self._require_client()
+        await client.write_gatt_char(WRITE_CHAR_UUID, packet)

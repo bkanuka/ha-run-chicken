@@ -10,7 +10,6 @@ from homeassistant.components.cover import (
     CoverEntity,
     CoverEntityDescription,
 )
-from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError
 from homeassistant.helpers.device_registry import (
     CONNECTION_BLUETOOTH,
     DeviceInfo,
@@ -18,7 +17,6 @@ from homeassistant.helpers.device_registry import (
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .coordinator import RunChickenCoordinator
-from .run_chicken_ble.cover import RunChickenController
 from .run_chicken_ble.models import RunChickenDoorState
 
 _LOGGER = logging.getLogger(__name__)
@@ -57,12 +55,6 @@ class RunChickenCoverEntity(CoordinatorEntity[RunChickenCoordinator], CoverEntit
         super().__init__(coordinator)
         self.run_chicken_device = coordinator.device
 
-        client = self.run_chicken_device.client
-        if client is None:
-            msg = "Run-Chicken device is not connected; cannot set up cover."
-            raise ConfigEntryNotReady(msg)
-        self.controller = RunChickenController(client=client)
-
         self._attr_unique_id = f"run_chicken_{self.run_chicken_device.address}"
 
         self._attr_device_info = DeviceInfo(
@@ -84,31 +76,13 @@ class RunChickenCoverEntity(CoordinatorEntity[RunChickenCoordinator], CoverEntit
             return None
         return self.coordinator.data.door_state is RunChickenDoorState.CLOSED
 
-    async def _async_ready_controller(self) -> RunChickenController:
-        """
-        Reconnect if needed and point the controller at the current client.
-
-        After a disconnect the device builds a fresh client, so the controller's
-        captured client goes stale and writes fail with "characteristic not
-        found". Refreshing it here keeps commands aligned with the live client.
-        """
-        await self.run_chicken_device.ensure_client_connected()
-        client = self.run_chicken_device.client
-        if client is None:
-            msg = "Run-Chicken device is not connected."
-            raise HomeAssistantError(msg)
-        self.controller.client = client
-        return self.controller
-
     async def async_open_cover(self, **kwargs: Any) -> None:  # noqa: ARG002
-        """Open the coop door, reconnecting first if the connection dropped."""
-        controller = await self._async_ready_controller()
-        await controller.open_cover()
+        """Open the coop door (the device reconnects first if needed)."""
+        await self.run_chicken_device.async_open()
 
     async def async_close_cover(self, **kwargs: Any) -> None:  # noqa: ARG002
-        """Close the coop door, reconnecting first if the connection dropped."""
-        controller = await self._async_ready_controller()
-        await controller.close_cover()
+        """Close the coop door (the device reconnects first if needed)."""
+        await self.run_chicken_device.async_close()
 
     def _handle_coordinator_update(self) -> None:
         """Handle data update."""

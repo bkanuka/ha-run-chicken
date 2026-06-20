@@ -122,7 +122,5 @@ class RunChickenConfigFlow(ConfigFlow, domain=DOMAIN):
             _LOGGER.exception("Unexpected error connecting to Run-Chicken device %s", address)
             return "unknown"
         finally:
-            client = device.client
-            if client is not None:
-                await client.disconnect()
+            await device.async_disconnect()
         return None
