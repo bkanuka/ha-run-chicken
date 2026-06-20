@@ -21,7 +21,6 @@ from homeassistant.components.bluetooth import (
     async_register_callback,
 )
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
@@ -31,7 +30,7 @@ from .run_chicken_ble.parser import RunChickenDevice
 _LOGGER = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from homeassistant.components.bluetooth.models import (
+    from homeassistant.components.bluetooth import (
         BluetoothChange,
         BluetoothServiceInfoBleak,
     )
@@ -90,9 +89,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: RunChickenConfigEntry) -
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    # Define and register a Bluetooth event callback to update the data when device start to advertise again
+    # Refresh the coordinator whenever the door advertises (e.g. after it drops
+    # the connection), which reconnects and re-subscribes notifications.
+    # BluetoothChange is a functional Enum (Enum("BluetoothChange", ...)) that
+    # PyCharm can't use as a type annotation, though the hint is correct for ty.
+    # noinspection PyTypeHints
     def async_handle_bluetooth_event(service_info: BluetoothServiceInfoBleak, change: BluetoothChange) -> None:
-        """Handle a Bluetooth reconnect event."""
+        """Handle a Bluetooth advertisement event by refreshing the coordinator."""
         _LOGGER.debug("BLE event received: %s, change %s", service_info, change)
 
         # Refresh data when device advertising is detected
@@ -109,7 +112,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: RunChickenConfigEntry) -
         )
     )
 
-    def notification_callback(gatt_char: BleakGATTCharacteristic, payload: bytearray) -> None:  # noqa: ARG001
+    def notification_callback(_gatt_char: BleakGATTCharacteristic, payload: bytearray) -> None:
         """Handle notification data from the device."""
         _LOGGER.debug("Handling notification payload")
         data = run_chicken_device.update_device_from_bytes(payload)
