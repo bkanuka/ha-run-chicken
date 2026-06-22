@@ -14,6 +14,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          # Full history + tags so we can diff against the previous release tag.
+          fetch-depth: 0
 
       - name: Compute version from tag
         id: ver
@@ -30,8 +33,27 @@ jobs:
       - name: List artifacts
         run: ls -lah dist
 
+      - name: Build release notes from commits
+        run: |
+          # Previous release tag by version order (robust to non-linear history).
+          prev="$(git tag --sort=-v:refname | awk -v cur="${GITHUB_REF_NAME}" 'found {print; exit} $0 == cur {found=1}')"
+          {
+            echo "## What's Changed"
+            echo
+            if [ -n "$prev" ]; then
+              git log --no-merges --pretty=format:'- %s' "${prev}..${GITHUB_REF_NAME}"
+              printf '\n\n'
+              echo "**Full Changelog**: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${prev}...${GITHUB_REF_NAME}"
+            else
+              git log --no-merges --pretty=format:'- %s' "${GITHUB_REF_NAME}"
+              echo
+            fi
+          } > release-notes.md
+          echo "----- release-notes.md -----"
+          cat release-notes.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
         with:
-          generate_release_notes: true
+          body_path: release-notes.md
           files: dist/ha-run-chicken.zip
