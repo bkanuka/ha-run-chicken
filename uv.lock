@@ -869,7 +869,7 @@ requires-dist = [
     { name = "bluetooth-sensor-state-data", specifier = ">=1.9.0" },
     { name = "colorlog", specifier = ">=6.10.1" },
     { name = "crc8", specifier = ">=0.2.1" },
-    { name = "habluetooth", specifier = ">=6.8.1" },
+    { name = "habluetooth", specifier = ">=6.9.0" },
     { name = "homeassistant", specifier = ">=2026.6.4" },
     { name = "pre-commit", specifier = ">=4.6.0" },
     { name = "ruff", specifier = ">=0.15" },
@@ -880,7 +880,7 @@ requires-dist = [
 
 [[package]]
 name = "habluetooth"
-version = "6.8.3"
+version = "6.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "async-interrupt" },
@@ -892,27 +892,9 @@ dependencies = [
     { name = "btsocket" },
     { name = "dbus-fast", marker = "sys_platform == 'linux'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2b/4f/8e1cfbf4c465e2ce2004dacb50b7d8f8c3921fa6d477b9265f23dc2e0af3/habluetooth-6.8.3.tar.gz", hash = "sha256:e2bc83250683fce51ab9c7e4f24e680d0e63ddcf946509218893f0c5e194ab52", size = 79803, upload-time = "2026-06-07T05:14:29.443Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/62/71/85492125ecde8a1594e72129a149cc11cc63812d19d96010725191501200/habluetooth-6.9.0.tar.gz", hash = "sha256:e14fcbc42e6fe108e7a72d6110f092b98307367ed7c22502b6657631d827ce5b", size = 82003, upload-time = "2026-06-22T17:33:08.575Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/43/e7/a2d98fde9a63197d54915bfef604c3e70d01d17c99e5573edd04e2f0530d/habluetooth-6.8.3-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:088098d414754e71e8c0cf39d719248284179a48abd1ce8cc0808759daabe41b", size = 791368, upload-time = "2026-06-07T05:25:26.187Z" },
-    { url = "https://files.pythonhosted.org/packages/b1/fe/bac085cd50fa1937971c970166450f6e7df7aa7046af249999502e4ee451/habluetooth-6.8.3-cp314-cp314-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:6079ada3ba1010c125f71475280b98d6cc4d090dc751c22942ed5dd38efcab3b", size = 926700, upload-time = "2026-06-07T05:25:27.576Z" },
-    { url = "https://files.pythonhosted.org/packages/da/12/cdf4d8be0215e72f3c909c1ed6994b055af9dd84f1525139ecbc743d4d62/habluetooth-6.8.3-cp314-cp314-manylinux2014_armv7l.manylinux_2_17_armv7l.manylinux_2_31_armv7l.whl", hash = "sha256:b6830be2cdbbb8e9f1a905f5c20623f735148a44ec27a353d45fca8f6e8c157e", size = 889075, upload-time = "2026-06-07T05:25:29.174Z" },
-    { url = "https://files.pythonhosted.org/packages/82/24/c9821a676de2795042e799d57fd84a048f0ad3befb3c2c2b0697606fa1ec/habluetooth-6.8.3-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:3a375068d65445bc374b2f04ff35887a321fe23d0dacb675800fd11ac0ec9f4e", size = 981334, upload-time = "2026-06-07T05:25:30.595Z" },
-    { url = "https://files.pythonhosted.org/packages/3d/b0/61bc923c670b571b4bdb73b25c235aa1f4f0a17e1849ad196e6a34b44d37/habluetooth-6.8.3-cp314-cp314-manylinux_2_41_x86_64.whl", hash = "sha256:cba7a43be63320020c24a549a2b4f0de574c9105c52237b82be5a5276ca763d5", size = 979939, upload-time = "2026-06-07T05:14:27.089Z" },
-    { url = "https://files.pythonhosted.org/packages/ba/47/e8a76fedf2671e1e3907fe22d54e46babcb30cba6fd5f042257af45f3205/habluetooth-6.8.3-cp314-cp314-musllinux_1_2_aarch64.whl", hash = "sha256:bc8f81a2669d9c008506f3783583dd749082f11031a83361f8dd6a4404583277", size = 940414, upload-time = "2026-06-07T05:25:32.505Z" },
-    { url = "https://files.pythonhosted.org/packages/e4/e4/0321b8d54335875564310ee770a0c22f825328e8eacaf7c198a9743963b3/habluetooth-6.8.3-cp314-cp314-musllinux_1_2_armv7l.whl", hash = "sha256:23d13c1de26d683123e8d1f58c683c28cb7833167b2efd5f5acb602d614bfeb3", size = 896598, upload-time = "2026-06-07T05:25:34.167Z" },
-    { url = "https://files.pythonhosted.org/packages/9c/9c/716b066c8bb005d425340f9919e0b4aa61d044a472cfe6ea518b8f2ac816/habluetooth-6.8.3-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:09ac6205f294a9c6ffc9e58be93e5719f91852092f7eb76c159e17aece720815", size = 990726, upload-time = "2026-06-07T05:25:35.808Z" },
-    { url = "https://files.pythonhosted.org/packages/ac/98/250c3577f7e07f8cf61118790dafdc49a5b72feb0fa55913622f575ef167/habluetooth-6.8.3-cp314-cp314-win32.whl", hash = "sha256:cf9cc826ca1c3bb49349a52541648902e9c09af6407788b1c4d7f60fbc1c0661", size = 642562, upload-time = "2026-06-07T05:25:37.491Z" },
-    { url = "https://files.pythonhosted.org/packages/cb/cb/d9874e5fd0826bde146c027ed88f45453526062882b02ab05f045b4a48f5/habluetooth-6.8.3-cp314-cp314-win_amd64.whl", hash = "sha256:ae0bff9f7004c57834648e97621ba164a25a126080f66fb9625f91564f6cb0d2", size = 743530, upload-time = "2026-06-07T05:25:38.885Z" },
-    { url = "https://files.pythonhosted.org/packages/a4/af/468ffecb717166c65a54a7543482d5223c9e05adff373037b0cf651b865c/habluetooth-6.8.3-cp314-cp314t-macosx_11_0_arm64.whl", hash = "sha256:3eb387a7b6aad3906592251dd5fa9292342e4c8079f3305c9de8e6e735dc497b", size = 1558524, upload-time = "2026-06-07T05:25:40.331Z" },
-    { url = "https://files.pythonhosted.org/packages/ad/fe/54fc22ab2916dec3d15c3c6a700b610258a30fa4052dc8d67df9c9d7be2f/habluetooth-6.8.3-cp314-cp314t-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:77322f033d9e0dcb873c8a6fb341bc8f38002160f5fa8ff066cade412a538266", size = 1766234, upload-time = "2026-06-07T05:25:42.157Z" },
-    { url = "https://files.pythonhosted.org/packages/08/d2/74b163584923a0414f691b3ec2a6364786d9672d11a745a81fc9e36afb8b/habluetooth-6.8.3-cp314-cp314t-manylinux2014_armv7l.manylinux_2_17_armv7l.manylinux_2_31_armv7l.whl", hash = "sha256:e13a75ab773d47f13a1ae977cff760802148cc01839d21c79628210f6e8a6784", size = 855221, upload-time = "2026-06-07T05:25:43.797Z" },
-    { url = "https://files.pythonhosted.org/packages/78/0b/f8834156e4b0ada50894f8340e34e0a0798f695990f9ffa3fc220776e953/habluetooth-6.8.3-cp314-cp314t-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:5e899e6930d1d898bf64c7ae44580b86c58432c24850e5d09b2b72ba06a9ebc7", size = 1856395, upload-time = "2026-06-07T05:25:45.528Z" },
-    { url = "https://files.pythonhosted.org/packages/17/cb/c5ae4095adb70b5d457ac50f1477037603242a458bcd1149eb0e21e0cd1e/habluetooth-6.8.3-cp314-cp314t-musllinux_1_2_aarch64.whl", hash = "sha256:e5f668cc71b5dc937045febc23f90fef16b39c367f42185b7903d8ac8c264806", size = 1795243, upload-time = "2026-06-07T05:25:47.204Z" },
-    { url = "https://files.pythonhosted.org/packages/60/a3/9f00ba920efd40b5f019f310a38ce4929c347b7d4420e652aa7ac7497cef/habluetooth-6.8.3-cp314-cp314t-musllinux_1_2_armv7l.whl", hash = "sha256:776ac4ce53fb4652d8f671e303363ebbbf0544096941707d9d09fccb683328cb", size = 890346, upload-time = "2026-06-07T05:25:48.978Z" },
-    { url = "https://files.pythonhosted.org/packages/3c/be/9053436ffd2d0f49f2374b73ef2dc5471d059b14d862c8a085968c9a588d/habluetooth-6.8.3-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:8ddcadf929276053e3cb2652ed18e032b029fcff88672cb5d1cdd045b9d6f700", size = 1877654, upload-time = "2026-06-07T05:25:50.734Z" },
-    { url = "https://files.pythonhosted.org/packages/b1/d8/9e0a3556127b42ff8cef70d2ae6544f03d207384b989d4e1274182a040ee/habluetooth-6.8.3-cp314-cp314t-win32.whl", hash = "sha256:2cb0bfb61212bd738ef7300050770d9bed41e67bf029b7968e0498f3209cbad7", size = 1250467, upload-time = "2026-06-07T05:25:53.06Z" },
-    { url = "https://files.pythonhosted.org/packages/9e/87/78671bd9e53d7a3a6733ec9ed766e62437adac0bdb338e406e671fb2671b/habluetooth-6.8.3-cp314-cp314t-win_amd64.whl", hash = "sha256:67bb922f6856cd983f4f388126d492badc4ece7f2940e19416e0c046afa73844", size = 1460190, upload-time = "2026-06-07T05:25:54.772Z" },
+    { url = "https://files.pythonhosted.org/packages/60/43/41d758fbb026e507a95b9963f800a04121945e8136fc27d5e33a54cd7781/habluetooth-6.9.0-cp314-cp314-manylinux_2_41_x86_64.whl", hash = "sha256:291b02e27bddfc089cb0658d20f9ebbc68aac62715adfdb5ebb55916332e9c1d", size = 1004362, upload-time = "2026-06-22T17:33:06.401Z" },
 ]
 
 [[package]]
