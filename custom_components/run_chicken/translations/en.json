@@ -30,7 +30,7 @@
                     "record_raw_bytes": "Record raw door data to a file"
                 },
                 "data_description": {
-                    "record_raw_bytes": "When enabled, every raw message exchanged with the door (received and sent) is appended (timestamp + RX/TX + base64) to run_chicken_<address>.log in your Home Assistant config folder. Attach that file when reporting an issue. Leave off for normal use."
+                    "record_raw_bytes": "When enabled, every raw message exchanged with the door (received and sent) is appended (timestamp + RX/TX + base64) to a run_chicken_[address].log file in your Home Assistant config folder. Attach that file when reporting an issue. Leave off for normal use."
                 }
             }
         }
