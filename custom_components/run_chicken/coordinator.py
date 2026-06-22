@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
     from . import RunChickenConfigEntry
-    from .run_chicken_ble.parser import RunChickenDevice
+    from .run_chicken_ble.device import RunChickenDevice
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ class RunChickenCoordinator(DataUpdateCoordinator[RunChickenDeviceData]):
         """Connect, subscribe to notifications, and wire up reconnect handling."""
         # Reconnect on an unexpected disconnect; the closure reads the callback
         # at disconnect time, so setting it before the first refresh is fine.
-        self.device.set_disconnect_callback(self._schedule_reconnect)
+        self.device.disconnect_callback = self._schedule_reconnect
 
         await self.async_config_entry_first_refresh()
 
@@ -69,12 +69,12 @@ class RunChickenCoordinator(DataUpdateCoordinator[RunChickenDeviceData]):
     async def _async_update_data(self) -> RunChickenDeviceData:
         """Fetch the latest door state over BLE (also reconnects if needed)."""
         _LOGGER.debug("Polling Run-Chicken device %s", self.device.address)
-        return await self.device.update_device()
+        return await self.device.poll_device()
 
     def _handle_notification(self, _gatt_char: BleakGATTCharacteristic, payload: bytearray) -> None:
         """Push a device notification payload into the coordinator."""
         _LOGGER.debug("Handling notification payload")
-        self.async_set_updated_data(self.device.update_device_from_bytes(payload))
+        self.async_set_updated_data(self.device.data_from_bytes(payload))
 
     # BluetoothChange is a functional Enum (Enum("BluetoothChange", ...)) that
     # PyCharm can't use as a type annotation, though the hint is correct for ty.
@@ -82,6 +82,8 @@ class RunChickenCoordinator(DataUpdateCoordinator[RunChickenDeviceData]):
     def _handle_bluetooth_event(self, service_info: BluetoothServiceInfoBleak, change: BluetoothChange) -> None:
         """Refresh on a Bluetooth advertisement (reconnects and re-subscribes)."""
         _LOGGER.debug("BLE event received: %s, change %s", service_info, change)
+        # Keep the device's BLEDevice fresh so reconnects use the best path.
+        self.device.ble_device = service_info.device
         self.hass.async_create_task(self.async_request_refresh(), f"{DOMAIN}_advertisement_refresh")
 
     def _schedule_reconnect(self) -> None:

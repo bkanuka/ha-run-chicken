@@ -13,23 +13,15 @@ class RunChickenDoorState(Enum):
     OPEN = 1
     CLOSED = 2
 
-    @classmethod
-    def from_raw(cls, raw: int) -> RunChickenDoorState:
-        """Map the device's raw door-state byte (0 = open, 1 = closed) to a state."""
-        return {0: cls.OPEN, 1: cls.CLOSED}.get(raw, cls.UNKNOWN)
 
-
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class RunChickenDeviceData:
-    """Response data with information about the RunChicken device."""
+    """
+    Immutable snapshot of a Run-Chicken door's observed state.
 
-    model: str | None = "T-50"
-    manufacturer: str | None = "Run-Chicken"
-    name: str = ""
-    identifier: str = ""
-    address: str = ""
+    This is the coordinator's data payload, rebuilt on every update and pushed to
+    entities. It holds only values that change over the device's life; static
+    identity (model, manufacturer, address) lives on ``RunChickenDevice``.
+    """
+
     door_state: RunChickenDoorState = RunChickenDoorState.UNKNOWN
-
-    def friendly_name(self) -> str:
-        """Generate a name for the device."""
-        return f"Run-Chicken Door {self.name}"

@@ -114,7 +114,7 @@ class RunChickenConfigFlow(ConfigFlow, domain=DOMAIN):
         # Assistant's own config-flow convention of catch-all -> "unknown").
         # noinspection PyBroadException
         try:
-            await device.ensure_client_connected()
+            await device.async_get_client()
         except (BleakError, TimeoutError):
             _LOGGER.debug("Could not connect to Run-Chicken device %s", address, exc_info=True)
             return "cannot_connect"

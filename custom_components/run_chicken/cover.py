@@ -64,9 +64,9 @@ class RunChickenCoverEntity(CoordinatorEntity[RunChickenCoordinator], CoverEntit
                     self.run_chicken_device.address,
                 )
             },
-            name=self.run_chicken_device.device_data.name,
-            manufacturer=self.run_chicken_device.device_data.manufacturer,
-            model=self.run_chicken_device.device_data.model,
+            name=self.run_chicken_device.name,
+            manufacturer=self.run_chicken_device.manufacturer,
+            model=self.run_chicken_device.model,
         )
 
     @property

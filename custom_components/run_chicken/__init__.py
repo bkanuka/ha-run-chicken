@@ -17,7 +17,7 @@ from homeassistant.const import Platform
 from homeassistant.exceptions import ConfigEntryNotReady
 
 from .coordinator import RunChickenCoordinator
-from .run_chicken_ble.parser import RunChickenDevice
+from .run_chicken_ble.device import RunChickenDevice
 
 _LOGGER = logging.getLogger(__name__)
 
