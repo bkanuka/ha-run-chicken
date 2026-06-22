@@ -68,6 +68,20 @@ Notes:
 - Keep the door powered and within Bluetooth range during setup.
 - If your host has multiple Bluetooth adapters, you may need to ensure the correct adapter is enabled for Home Assistant.
 
+## 🐞 Debugging / Reporting Bugs
+
+Because this integration has only been tested on a few doors, it's a huge help to capture the raw Bluetooth traffic when something doesn't work — especially on door models other than the T50.
+
+To record it:
+
+1. Go to **Settings → Devices & Services → Run‑Chicken → Configure**.
+2. Turn on **"Record raw door data to a file"** and submit. The integration reloads automatically.
+3. Reproduce the issue (open/close the door, wait for a state update, etc.).
+4. Find the log file in your Home Assistant config folder, named `run_chicken_<address>.log` (e.g. `run_chicken_aabbccddeeff.log`). You can retrieve it with the File Editor or Samba add-on, or from the host shell under `/config`.
+5. Attach the file to a [GitHub issue](https://github.com/bkanuka/ha-run-chicken/issues). **Turn the option back off** when you're done — it keeps appending while enabled.
+
+Each line is a single message, formatted as `<UTC timestamp> <RX|TX> <base64 payload>`, where `RX` is data received from the door and `TX` is data sent to it. The bytes are base64-encoded so the file stays plain text and safe to paste.
+
 ## ✔️ To-Do
 
 - [x] Open / Close control and reporting

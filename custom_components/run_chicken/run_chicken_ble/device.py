@@ -49,9 +49,9 @@ class RunChickenDevice:
         self.disconnect_callback: Callable[[], None] | None = None
         # Set during teardown so we don't fight an intentional disconnect.
         self._expected_disconnect = False
-        # Tracks whether the once-per-connection session-init "hello" has been
-        # sent; reset to False whenever a new connection is made.
-        self._session_initialized = False
+        # Optional debug hook invoked as (direction, payload) for every raw
+        # message exchanged with the door when set ("RX" received, "TX" sent).
+        self.raw_recorder: Callable[[str, bytes | bytearray], None] | None = None
 
         # Pick the command-frame protocol from the advertised name (T-50 vs GIANT).
         self.protocol = RunChickenProtocol.for_advertised_name(ble_device.name)
@@ -108,11 +108,13 @@ class RunChickenDevice:
         )
         self._client = client
 
-        # Fresh connection: the session-init must be re-sent before the next command.
-        self._session_initialized = False
-
-        # Re-subscribe notifications so push updates resume after a reconnect.
+        # Re-subscribe notifications so push updates resume after a reconnect, and
+        # so we catch any state the door pushes in reply to the hello below.
         await self._async_subscribe_notifications()
+
+        # The official GIANT app sends a session-init "hello" right after
+        # connecting; we do the same for every model, once per connection.
+        await self._async_send_command(self.protocol.session_init_packet(), client=client)
 
         return client
 
@@ -163,6 +165,8 @@ class RunChickenDevice:
     def data_from_bytes(self, payload: bytes | bytearray) -> RunChickenDeviceData:
         """Build a fresh state snapshot from a raw device payload."""
         _LOGGER.debug("Building state from bytes: %s", payload.hex())
+        if self.raw_recorder is not None:
+            self.raw_recorder("RX", payload)
         return RunChickenDeviceData(door_state=self.protocol.parse_door_state(payload))
 
     # --- Door commands ---
@@ -177,21 +181,16 @@ class RunChickenDevice:
         """Close the Run-Chicken door."""
         await self._async_send_command(self.protocol.close_packet())
 
-    async def _async_send_command(self, packet: bytes) -> None:
-        """Connect if needed and write a command packet to the door."""
-        client = await self.async_get_client()
-        await self._async_session_init(client)
+    async def _async_send_command(self, packet: bytes, client: BleakClient | None = None) -> None:
+        """
+        Write a command frame to the door, recording it when recording is on.
+
+        Connects (or reconnects) first, unless a freshly established ``client`` is
+        supplied — as it is for the session-init "hello", which is sent from
+        within the connection setup itself.
+        """
+        if client is None:
+            client = await self.async_get_client()
+        if self.raw_recorder is not None:
+            self.raw_recorder("TX", packet)
         await client.write_gatt_char(WRITE_CHAR_UUID, packet)
-
-    async def _async_session_init(self, client: BleakClient) -> None:
-        """
-        Send the session-init "hello" once per connection, before any command.
-
-        The official GIANT app sends this right after connecting; we do the same
-        for every model. Sent once and reset on each reconnect.
-        """
-        if self._session_initialized:
-            return
-        await client.write_gatt_char(WRITE_CHAR_UUID, self.protocol.session_init_packet())
-        self._session_initialized = True
-        _LOGGER.debug("Sent %s session-init packet to %s", self.protocol.model, client.address)

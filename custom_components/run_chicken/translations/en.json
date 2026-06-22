@@ -21,5 +21,18 @@
             "not_run_chicken_device": "The discovered device is not a Run-Chicken door.",
             "no_devices_found": "No Run-Chicken devices were found."
         }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Run-Chicken options",
+                "data": {
+                    "record_raw_bytes": "Record raw door data to a file"
+                },
+                "data_description": {
+                    "record_raw_bytes": "When enabled, every raw message exchanged with the door (received and sent) is appended (timestamp + RX/TX + base64) to run_chicken_<address>.log in your Home Assistant config folder. Attach that file when reporting an issue. Leave off for normal use."
+                }
+            }
+        }
     }
 }

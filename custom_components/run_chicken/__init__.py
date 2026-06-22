@@ -16,7 +16,9 @@ from homeassistant.components.bluetooth import async_ble_device_from_address
 from homeassistant.const import Platform
 from homeassistant.exceptions import ConfigEntryNotReady
 
+from .const import CONF_RECORD_RAW_BYTES
 from .coordinator import RunChickenCoordinator
+from .recorder import RawByteRecorder
 from .run_chicken_ble.device import RunChickenDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -45,7 +47,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: RunChickenConfigEntry) -
         raise ConfigEntryNotReady(msg)
 
     _LOGGER.debug("Setting up Run-Chicken device %s", address)
-    door_coordinator = RunChickenCoordinator(hass, entry, RunChickenDevice(ble_device))
+    device = RunChickenDevice(ble_device)
+    if entry.options.get(CONF_RECORD_RAW_BYTES):
+        # Sanitise the address for a filesystem- and editor-friendly name.
+        recording_path = hass.config.path(f"run_chicken_{address.replace(':', '').lower()}.log")
+        device.raw_recorder = RawByteRecorder(hass, recording_path).record
+        _LOGGER.info("Run-Chicken raw-byte recording enabled, writing to %s", recording_path)
+
+    door_coordinator = RunChickenCoordinator(hass, entry, device)
     await door_coordinator.async_init()
     entry.runtime_data = door_coordinator
 

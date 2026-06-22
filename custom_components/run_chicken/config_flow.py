@@ -11,14 +11,20 @@ from homeassistant.components.bluetooth import (
     async_ble_device_from_address,
     async_discovered_service_info,
 )
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import (
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlowWithReload,
+)
 from homeassistant.const import CONF_ADDRESS
+from homeassistant.core import callback
 
-from .const import DOMAIN, MANUFACTURER_ID
+from .const import CONF_RECORD_RAW_BYTES, DOMAIN, MANUFACTURER_ID
 from .run_chicken_ble import RunChickenDevice
 
 if TYPE_CHECKING:
     from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
+    from homeassistant.config_entries import ConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,6 +40,12 @@ class RunChickenConfigFlow(ConfigFlow, domain=DOMAIN):
         """Initialize the config flow."""
         # Maps a device address to a human-readable label for the picker.
         self._discovered_devices: dict[str, str] = {}
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: ConfigEntry) -> RunChickenOptionsFlow:  # noqa: ARG004
+        """Return the options flow handler for this integration."""
+        return RunChickenOptionsFlow()
 
     async def async_step_bluetooth(self, discovery_info: BluetoothServiceInfoBleak) -> ConfigFlowResult:
         """Handle a bluetooth discovery and ask the user to confirm."""
@@ -124,3 +136,22 @@ class RunChickenConfigFlow(ConfigFlow, domain=DOMAIN):
         finally:
             await device.async_disconnect()
         return None
+
+
+class RunChickenOptionsFlow(OptionsFlowWithReload):
+    """Handle Run-Chicken options (reloads the entry when options change)."""
+
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Manage the integration options."""
+        if user_input is not None:
+            return self.async_create_entry(data=user_input)
+
+        schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_RECORD_RAW_BYTES,
+                    default=self.config_entry.options.get(CONF_RECORD_RAW_BYTES, False),
+                ): bool,
+            }
+        )
+        return self.async_show_form(step_id="init", data_schema=schema)
