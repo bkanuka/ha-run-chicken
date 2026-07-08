@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from homeassistant.components.bluetooth import async_last_service_info
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.const import EntityCategory
 from homeassistant.helpers.device_registry import CONNECTION_BLUETOOTH, DeviceInfo
@@ -65,6 +66,7 @@ async def async_setup_entry(
             RunChickenScheduleOffsetSensor(coordinator, "close"),
             RunChickenOpenTimeSensor(coordinator),
             RunChickenCloseTimeSensor(coordinator),
+            RunChickenRssiSensor(coordinator),
         ]
     )
 
@@ -232,3 +234,29 @@ class RunChickenCloseTimeSensor(RunChickenTimeSensorBase):
     def __init__(self, coordinator: RunChickenCoordinator) -> None:
         """Initialize the close-time sensor."""
         super().__init__(coordinator, "close")
+
+
+class RunChickenRssiSensor(RunChickenSensorBase):
+    """
+    Reports real BLE advertisement RSSI, sourced from Home Assistant's own
+    Bluetooth stack (not from anything in the door's status payload).
+
+    A candidate byte in the status payload was investigated and ruled out as
+    RSSI (it read a constant -76 on both doors regardless of their actual,
+    differing signal strength) - this sensor uses the real value instead.
+    """
+
+    _attr_device_class = SensorDeviceClass.SIGNAL_STRENGTH
+    _attr_native_unit_of_measurement = "dBm"
+
+    def __init__(self, coordinator: RunChickenCoordinator) -> None:
+        """Initialize the RSSI sensor."""
+        super().__init__(coordinator, "rssi", "Signal Strength")
+
+    @property
+    def native_value(self) -> int | None:
+        """Return the most recently seen advertisement RSSI, if any."""
+        service_info = async_last_service_info(
+            self.hass, self.run_chicken_device.address, connectable=True
+        )
+        return service_info.rssi if service_info else None
