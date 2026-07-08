@@ -12,13 +12,14 @@ from bleak_retry_connector import (
 )
 from homeassistant.helpers.update_coordinator import UpdateFailed
 
-from .models import RunChickenDeviceData
 from .protocol import READ_CHAR_UUID, WRITE_CHAR_UUID, RunChickenProtocol
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from bleak import BleakClient, BLEDevice
+
+    from .models import RunChickenDeviceData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -167,7 +168,7 @@ class RunChickenDevice:
         _LOGGER.debug("Building state from bytes: %s", payload.hex())
         if self.raw_recorder is not None:
             self.raw_recorder("RX", payload)
-        return RunChickenDeviceData(door_state=self.protocol.parse_door_state(payload))
+        return self.protocol.parse_status(payload)
 
     # --- Door commands ---
 

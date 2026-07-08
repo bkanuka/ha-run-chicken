@@ -19,7 +19,12 @@ from typing import ClassVar
 
 import crc8
 
-from .models import RunChickenDoorState
+from .models import (
+    RunChickenDeviceData,
+    RunChickenDoorState,
+    RunChickenMotorMode,
+    RunChickenScheduleMode,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,6 +52,31 @@ class RunChickenProtocol(abc.ABC):
 
     #: Byte offset of the door-state field in a read-characteristic payload.
     door_state_offset: ClassVar[int] = 17
+
+    #: Remaining offsets below were reverse-engineered by capturing raw status
+    #: payloads (via the integration's own raw-byte debug recorder) and
+    #: diffing them against known app settings changes and app-reported
+    #: values - there is no official protocol spec. Verified against T-50
+    #: family doors (including "Eternal BT"); not verified on GIANT, which is
+    #: known to use a different command-frame layout (see issue #12) and may
+    #: differ here too.
+    open_schedule_mode_offset: ClassVar[int] = 19
+    close_schedule_mode_offset: ClassVar[int] = 20
+    #: 2 bytes: resolved open time as (hour, minute), UTC. Populated by
+    #: whichever schedule mode is active - a fixed Timer setting, or the
+    #: day's resolved Sunrise/Sunset+offset time.
+    open_time_offset: ClassVar[int] = 21
+    #: 2 bytes: resolved close time as (hour, minute), UTC - same shape as
+    #: open_time_offset, by symmetry with the open_schedule_mode_offset /
+    #: close_schedule_mode_offset pairing. UNVERIFIED: hypothesized from byte
+    #: position alone, never independently confirmed against a real
+    #: Close->Time app setting the way open_time_offset was.
+    close_time_offset: ClassVar[int] = 23
+    open_offset_minutes_offset: ClassVar[int] = 25
+    close_offset_minutes_offset: ClassVar[int] = 26
+    #: 3 bytes: firmware version as (major, minor, patch).
+    firmware_version_offset: ClassVar[int] = 38
+    motor_mode_offset: ClassVar[int] = 41
 
     @classmethod
     def for_advertised_name(cls, name: str | None) -> RunChickenProtocol:
@@ -86,6 +116,53 @@ class RunChickenProtocol(abc.ABC):
         return {0: RunChickenDoorState.OPEN, 1: RunChickenDoorState.CLOSED}.get(
             payload[self.door_state_offset], RunChickenDoorState.UNKNOWN
         )
+
+    def parse_status(self, payload: bytes | bytearray) -> RunChickenDeviceData:
+        """Decode a full status snapshot from a read-characteristic payload."""
+        return RunChickenDeviceData(
+            door_state=self.parse_door_state(payload),
+            firmware_version=self._parse_firmware_version(payload),
+            motor_mode=self._parse_enum(payload, self.motor_mode_offset, RunChickenMotorMode),
+            open_schedule_mode=self._parse_enum(payload, self.open_schedule_mode_offset, RunChickenScheduleMode),
+            close_schedule_mode=self._parse_enum(payload, self.close_schedule_mode_offset, RunChickenScheduleMode),
+            open_offset_minutes=self._parse_byte(payload, self.open_offset_minutes_offset),
+            close_offset_minutes=self._parse_byte(payload, self.close_offset_minutes_offset),
+            open_time=self._parse_time(payload, self.open_time_offset),
+            close_time=self._parse_time(payload, self.close_time_offset),
+        )
+
+    @staticmethod
+    def _parse_byte(payload: bytes | bytearray, offset: int) -> int | None:
+        """Return the byte at ``offset``, or None if the payload is too short."""
+        return payload[offset] if len(payload) > offset else None
+
+    @classmethod
+    def _parse_enum(cls, payload: bytes | bytearray, offset: int, enum_cls: type) -> object:
+        """Decode a single-byte enum field, falling back to the enum's UNKNOWN member."""
+        value = cls._parse_byte(payload, offset)
+        if value is None:
+            return enum_cls.UNKNOWN
+        try:
+            return enum_cls(value)
+        except ValueError:
+            return enum_cls.UNKNOWN
+
+    @staticmethod
+    def _parse_time(payload: bytes | bytearray, offset: int) -> dt.time | None:
+        """Decode a resolved (hour, minute) field at ``offset`` as a UTC ``time``."""
+        if len(payload) <= offset + 1:
+            return None
+        hour, minute = payload[offset], payload[offset + 1]
+        if hour > 23 or minute > 59:  # noqa: PLR2004
+            return None
+        return dt.time(hour, minute, tzinfo=dt.UTC)
+
+    def _parse_firmware_version(self, payload: bytes | bytearray) -> str | None:
+        """Decode the 3-byte (major, minor, patch) firmware version, e.g. "1.2.56"."""
+        if len(payload) <= self.firmware_version_offset + 2:
+            return None
+        major, minor, patch = payload[self.firmware_version_offset : self.firmware_version_offset + 3]
+        return f"{major}.{minor}.{patch}"
 
     @staticmethod
     def _resolve_time(packet_time: dt.datetime | None) -> dt.datetime:
