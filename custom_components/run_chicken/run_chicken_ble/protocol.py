@@ -35,6 +35,13 @@ READ_CHAR_UUID = "00000001-8e22-4541-9d4c-21edae82ed19"
 WRITE_SERVICE_UUID = "00000000-cc7a-482a-984a-7f2ed5b3e58f"
 WRITE_CHAR_UUID = "00000000-8e22-4541-9d4c-21edae82ed19"
 
+# 0000fe11-8e22-4541-9d4c-21edae82ed19 also exists on this device, under the
+# write service, with properties ['write-without-response'] (no read/notify).
+# Reportedly used for firmware update (FUS) / OTA transfer on this chipset
+# family - DO NOT write to it. An undocumented/guessed write here risks
+# corrupting or bricking the door's firmware, not just misbehaving. Not
+# defined as a constant here on purpose, to avoid tempting future use.
+
 
 class RunChickenAction(IntEnum):
     """Door action encoded in a command frame (byte [21])."""
