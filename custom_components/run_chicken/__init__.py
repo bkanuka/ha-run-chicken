@@ -29,7 +29,11 @@ if TYPE_CHECKING:
 
 PLATFORMS: list[Platform] = [
     Platform.COVER,
+    Platform.NUMBER,
+    Platform.SELECT,
     Platform.SENSOR,
+    Platform.SWITCH,
+    Platform.TIME,
 ]
 
 type RunChickenConfigEntry = ConfigEntry[RunChickenCoordinator]

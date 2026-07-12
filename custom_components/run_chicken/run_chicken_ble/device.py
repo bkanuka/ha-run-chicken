@@ -182,6 +182,20 @@ class RunChickenDevice:
         """Close the Run-Chicken door."""
         await self._async_send_command(self.protocol.close_packet())
 
+    @retry_bluetooth_connection_error()
+    async def async_write_settings(self, current: RunChickenDeviceData, **changes: object) -> None:
+        """
+        Change door settings (motor mode / schedule) with a read-modify-write.
+
+        The door's settings command carries every setting in one frame, so the
+        packet is built from ``current`` (the latest snapshot) with ``changes``
+        applied on top - see ``RunChickenProtocol.settings_packet``. Raises
+        ``ValueError`` if the merged settings are incomplete, and does not move
+        the door.
+        """
+        packet = self.protocol.settings_packet(current, **changes)
+        await self._async_send_command(packet)
+
     async def _async_send_command(self, packet: bytes, client: BleakClient | None = None) -> None:
         """
         Write a command frame to the door, recording it when recording is on.
