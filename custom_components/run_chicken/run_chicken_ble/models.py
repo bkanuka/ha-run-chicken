@@ -58,6 +58,10 @@ class RunChickenDeviceData:
 
     door_state: RunChickenDoorState = RunChickenDoorState.UNKNOWN
     firmware_version: str | None = None
+    #: Battery voltage in volts. Sags under motor load (draws down while the
+    #: door is opening/closing) and recovers afterward, so a momentary dip
+    #: during a transition is expected, not a fault.
+    battery_voltage: float | None = None
     motor_mode: RunChickenMotorMode = RunChickenMotorMode.UNKNOWN
     open_schedule_mode: RunChickenScheduleMode = RunChickenScheduleMode.UNKNOWN
     close_schedule_mode: RunChickenScheduleMode = RunChickenScheduleMode.UNKNOWN

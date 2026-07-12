@@ -57,8 +57,19 @@ class RunChickenProtocol(abc.ABC):
     #: Human-readable model name, surfaced in the device registry.
     model: ClassVar[str]
 
+    #: Whether this model's settings-write frame (motor mode + open/close
+    #: schedule) has been reverse-engineered. Only the T-50 family has, so
+    #: settings entities stay read-only for any other model.
+    supports_settings_write: ClassVar[bool] = False
+
     #: Byte offset of the door-state field in a read-characteristic payload.
     door_state_offset: ClassVar[int] = 17
+
+    #: Byte offset of the battery voltage: a little-endian uint16 in centivolts
+    #: (value / 100 = volts). Reverse-engineered from an nRF Sniffer capture -
+    #: it read 290 (2.90V) at rest and sagged to 277 (2.77V) mid-open under
+    #: motor load, matching the app's own displayed voltage at both points.
+    battery_voltage_offset: ClassVar[int] = 13
 
     #: Remaining offsets below were reverse-engineered by capturing raw status
     #: payloads (via the integration's own raw-byte debug recorder) and
@@ -109,6 +120,72 @@ class RunChickenProtocol(abc.ABC):
         """Create the session-init "hello" packet sent once after connecting."""
         return self._build(RunChickenAction.STATUS, self._resolve_time(packet_time))
 
+    def settings_packet(
+        self,
+        current: RunChickenDeviceData,
+        *,
+        motor_mode: RunChickenMotorMode | None = None,
+        open_schedule_mode: RunChickenScheduleMode | None = None,
+        close_schedule_mode: RunChickenScheduleMode | None = None,
+        open_time: dt.time | None = None,
+        close_time: dt.time | None = None,
+        open_offset_minutes: int | None = None,
+        close_offset_minutes: int | None = None,
+        packet_time: dt.datetime | None = None,
+    ) -> bytes:
+        """
+        Build a settings-write frame, changing only the fields passed and
+        preserving everything else from ``current``.
+
+        The door's settings command is a full read-modify-write blob: one frame
+        carries the motor mode *and* the entire open/close schedule at once, so
+        every field must be supplied. Any field left as ``None`` is taken from
+        ``current`` (the latest polled snapshot); pass a field to change it.
+        Times are UTC, matching how the door stores and reports them.
+
+        Raises ``ValueError`` if any resulting field is still unknown (e.g. the
+        current snapshot never resolved a schedule mode), rather than writing a
+        frame that would silently wipe a real setting to a default.
+        """
+        motor_mode = current.motor_mode if motor_mode is None else motor_mode
+        open_schedule_mode = current.open_schedule_mode if open_schedule_mode is None else open_schedule_mode
+        close_schedule_mode = current.close_schedule_mode if close_schedule_mode is None else close_schedule_mode
+        open_time = current.open_time if open_time is None else open_time
+        close_time = current.close_time if close_time is None else close_time
+        open_offset_minutes = current.open_offset_minutes if open_offset_minutes is None else open_offset_minutes
+        close_offset_minutes = current.close_offset_minutes if close_offset_minutes is None else close_offset_minutes
+
+        unknown = [
+            name
+            for name, known in (
+                ("motor mode", motor_mode not in (None, RunChickenMotorMode.UNKNOWN)),
+                ("open schedule mode", open_schedule_mode not in (None, RunChickenScheduleMode.UNKNOWN)),
+                ("close schedule mode", close_schedule_mode not in (None, RunChickenScheduleMode.UNKNOWN)),
+                ("open time", open_time is not None),
+                ("close time", close_time is not None),
+                ("open offset minutes", open_offset_minutes is not None),
+                ("close offset minutes", close_offset_minutes is not None),
+            )
+            if not known
+        ]
+        if unknown:
+            msg = (
+                "Cannot change door settings while these values are still unknown: "
+                f"{', '.join(unknown)}. Wait for a reading from the door and try again."
+            )
+            raise ValueError(msg)
+
+        return self._build_settings(
+            motor_mode=motor_mode,
+            open_schedule_mode=open_schedule_mode,
+            close_schedule_mode=close_schedule_mode,
+            open_time=open_time,
+            close_time=close_time,
+            open_offset_minutes=open_offset_minutes,
+            close_offset_minutes=close_offset_minutes,
+            packet_time=self._resolve_time(packet_time),
+        )
+
     def parse_door_state(self, payload: bytes | bytearray) -> RunChickenDoorState:
         """
         Decode the door state from a read-characteristic payload.
@@ -129,6 +206,7 @@ class RunChickenProtocol(abc.ABC):
         return RunChickenDeviceData(
             door_state=self.parse_door_state(payload),
             firmware_version=self._parse_firmware_version(payload),
+            battery_voltage=self._parse_battery_voltage(payload),
             motor_mode=self._parse_enum(payload, self.motor_mode_offset, RunChickenMotorMode),
             open_schedule_mode=self._parse_enum(payload, self.open_schedule_mode_offset, RunChickenScheduleMode),
             close_schedule_mode=self._parse_enum(payload, self.close_schedule_mode_offset, RunChickenScheduleMode),
@@ -164,6 +242,14 @@ class RunChickenProtocol(abc.ABC):
             return None
         return dt.time(hour, minute, tzinfo=dt.UTC)
 
+    def _parse_battery_voltage(self, payload: bytes | bytearray) -> float | None:
+        """Decode battery voltage from the little-endian centivolt field, in volts."""
+        offset = self.battery_voltage_offset
+        if len(payload) <= offset + 1:
+            return None
+        centivolts = payload[offset] | (payload[offset + 1] << 8)
+        return centivolts / 100
+
     def _parse_firmware_version(self, payload: bytes | bytearray) -> str | None:
         """Decode the 3-byte (major, minor, patch) firmware version, e.g. "1.2.56"."""
         if len(payload) <= self.firmware_version_offset + 2:
@@ -193,6 +279,27 @@ class RunChickenProtocol(abc.ABC):
         command.
         """
 
+    def _build_settings(
+        self,
+        *,
+        motor_mode: RunChickenMotorMode,
+        open_schedule_mode: RunChickenScheduleMode,
+        close_schedule_mode: RunChickenScheduleMode,
+        open_time: dt.time,
+        close_time: dt.time,
+        open_offset_minutes: int,
+        close_offset_minutes: int,
+        packet_time: dt.datetime,
+    ) -> bytes:
+        """
+        Build the model's settings-write frame (validated inputs only).
+
+        Only overridden by models whose settings frame is known; the default
+        refuses, guarded by ``supports_settings_write``.
+        """
+        msg = f"Writing settings is not supported for the {self.model}."
+        raise NotImplementedError(msg)
+
 
 class T50Protocol(RunChickenProtocol):
     """
@@ -203,6 +310,13 @@ class T50Protocol(RunChickenProtocol):
     """
 
     model = "T-50"
+    supports_settings_write = True
+
+    #: Bytes [9..12] of the settings frame. Every settings write the official
+    #: app sent carried this exact value (across motor-mode and schedule
+    #: changes); its meaning is unconfirmed, but the door accepts it as a fixed
+    #: header. Reverse-engineered from an nRF Sniffer capture of the app.
+    _SETTINGS_HEADER: ClassVar[bytes] = bytes.fromhex("2800b4ff")
 
     def _build(self, action: RunChickenAction, packet_time: dt.datetime) -> bytes:
         # Byte [0] is 0x01 for the session-init/status frame, 0x00 for a command.
@@ -226,6 +340,37 @@ class T50Protocol(RunChickenProtocol):
         packet += struct.pack("<9x")
 
         return self._append_crc(packet)
+
+    def _build_settings(
+        self,
+        *,
+        motor_mode: RunChickenMotorMode,
+        open_schedule_mode: RunChickenScheduleMode,
+        close_schedule_mode: RunChickenScheduleMode,
+        open_time: dt.time,
+        close_time: dt.time,
+        open_offset_minutes: int,
+        close_offset_minutes: int,
+        packet_time: dt.datetime,
+    ) -> bytes:
+        # Settings frame (byte [0] = 0x00). Unlike the open/close frame it does
+        # not duplicate the timestamp, and it packs the whole open/close
+        # schedule into bytes [13..20]. Byte [21] is held at STATUS so the door
+        # applies the settings without moving; byte [22] carries the motor mode.
+        packet = bytearray(31)
+        struct.pack_into("<I", packet, 1, int(packet_time.timestamp()))
+        packet[9:13] = self._SETTINGS_HEADER
+        packet[13] = open_schedule_mode.value
+        packet[14] = close_schedule_mode.value
+        packet[15] = open_time.hour
+        packet[16] = open_time.minute
+        packet[17] = close_time.hour
+        packet[18] = close_time.minute
+        packet[19] = open_offset_minutes
+        packet[20] = close_offset_minutes
+        packet[21] = RunChickenAction.STATUS
+        packet[22] = motor_mode.value
+        return self._append_crc(bytes(packet))
 
 
 class GiantProtocol(RunChickenProtocol):

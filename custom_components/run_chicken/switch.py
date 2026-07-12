@@ -7,12 +7,8 @@ from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers.device_registry import (
-    CONNECTION_BLUETOOTH,
-    DeviceInfo,
-)
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from .entity import RunChickenEntity
 from .run_chicken_ble.models import RunChickenMotorMode
 
 _LOGGER = logging.getLogger(__name__)
@@ -24,7 +20,7 @@ if TYPE_CHECKING:
     from . import RunChickenConfigEntry
     from .coordinator import RunChickenCoordinator
 
-_NOT_SUPPORTED_MSG = "Setting motor mode from Home Assistant isn't supported yet - change it in the Run-Chicken app for now."
+_NOT_SUPPORTED_MSG = "Setting motor mode from Home Assistant isn't supported for this door model - change it in the Run-Chicken app for now."
 
 
 async def async_setup_entry(
@@ -46,19 +42,19 @@ async def async_setup_entry(
     )
 
 
-class RunChickenMotorModeSwitch(CoordinatorEntity["RunChickenCoordinator"], SwitchEntity):
+class RunChickenMotorModeSwitch(RunChickenEntity, SwitchEntity):
     """
     Mirrors one of the door's two mutually-exclusive motor-mode toggles, matching the app's own UI.
 
     The app exposes Anti-pinch and Power-mode as two separate switches even
     though the door itself reports a single selector (see
-    ``RunChickenMotorMode``) - this mirrors that same one-switch-per-mode
-    shape here. Read-only for now: the door's write command for changing
-    motor mode hasn't been reverse-engineered yet, so toggling either switch
-    raises rather than silently doing nothing.
+    ``RunChickenMotorMode``) - this mirrors that same one-switch-per-mode shape
+    here. Turning one on turns the other off, because they are the same
+    underlying selector; turning a switch off returns the selector to OFF only
+    when that switch is the active mode.
     """
 
-    _attr_has_entity_name = True
+    _attr_entity_registry_enabled_default = False
 
     def __init__(
         self,
@@ -69,18 +65,10 @@ class RunChickenMotorModeSwitch(CoordinatorEntity["RunChickenCoordinator"], Swit
         icon: str,
     ) -> None:
         """Initialize the switch for a single motor mode."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, key)
         self._mode = mode
-        self.run_chicken_device = coordinator.device
-        self._attr_unique_id = f"run_chicken_{self.run_chicken_device.address}_{key}"
         self._attr_name = name
         self._attr_icon = icon
-        self._attr_device_info = DeviceInfo(
-            connections={(CONNECTION_BLUETOOTH, self.run_chicken_device.address)},
-            name=self.run_chicken_device.name,
-            manufacturer=self.run_chicken_device.manufacturer,
-            model=self.run_chicken_device.model,
-        )
 
     @property
     def is_on(self) -> bool:
@@ -88,9 +76,16 @@ class RunChickenMotorModeSwitch(CoordinatorEntity["RunChickenCoordinator"], Swit
         return self.coordinator.data.motor_mode is self._mode
 
     async def async_turn_on(self, **kwargs: Any) -> None:  # noqa: ARG002
-        """Not yet supported - the door's set-motor-mode write command hasn't been decoded."""
-        raise HomeAssistantError(_NOT_SUPPORTED_MSG)
+        """Select this switch's motor mode (implicitly deselecting the other)."""
+        if not self.run_chicken_device.protocol.supports_settings_write:
+            raise HomeAssistantError(_NOT_SUPPORTED_MSG)
+        await self._async_write_settings(motor_mode=self._mode)
 
     async def async_turn_off(self, **kwargs: Any) -> None:  # noqa: ARG002
-        """Not yet supported - the door's set-motor-mode write command hasn't been decoded."""
-        raise HomeAssistantError(_NOT_SUPPORTED_MSG)
+        """Turn the motor mode off, but only if this switch is the active one."""
+        if not self.run_chicken_device.protocol.supports_settings_write:
+            raise HomeAssistantError(_NOT_SUPPORTED_MSG)
+        # The two switches share one selector; only the active one owns "off",
+        # so turning off the inactive switch must not clobber the other's mode.
+        if self.coordinator.data.motor_mode is self._mode:
+            await self._async_write_settings(motor_mode=RunChickenMotorMode.OFF)

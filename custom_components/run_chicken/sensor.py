@@ -6,8 +6,12 @@ import logging
 from typing import TYPE_CHECKING
 
 from homeassistant.components.bluetooth import async_last_service_info
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
-from homeassistant.const import EntityCategory
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
+from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfElectricPotential
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import CONNECTION_BLUETOOTH, DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -65,6 +69,8 @@ async def async_setup_entry(
             RunChickenOpenTimeSensor(coordinator),
             RunChickenCloseTimeSensor(coordinator),
             RunChickenRssiSensor(coordinator),
+            RunChickenBatteryVoltageSensor(coordinator),
+            RunChickenBatteryLevelSensor(coordinator),
         ]
     )
 
@@ -74,6 +80,9 @@ class RunChickenSensorBase(CoordinatorEntity["RunChickenCoordinator"], SensorEnt
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_has_entity_name = True
+    # Most sensors are extra diagnostics, off by default; the handful meant to
+    # be visible out of the box (firmware, battery %) override this to True.
+    _attr_entity_registry_enabled_default = False
 
     def __init__(self, coordinator: RunChickenCoordinator, key: str, name: str) -> None:
         """Initialize the sensor and its shared device info."""
@@ -135,6 +144,7 @@ class RunChickenFirmwareVersionSensor(RunChickenSensorBase):
     """Reports the door's firmware version, e.g. "1.2.56"."""
 
     _attr_entity_picture = "https://brands.home-assistant.io/_/run_chicken/icon.png"
+    _attr_entity_registry_enabled_default = True
 
     def __init__(self, coordinator: RunChickenCoordinator) -> None:
         """Initialize the firmware-version sensor."""
@@ -292,3 +302,71 @@ class RunChickenRssiSensor(RunChickenSensorBase):
         if service_info is not None:
             self._last_rssi = service_info.rssi
         return self._last_rssi
+
+
+class RunChickenBatteryVoltageSensor(RunChickenSensorBase):
+    """
+    Reports the door's battery voltage (2x AA cells, topped up by the door's solar panel).
+
+    Decoded from the status payload. The reading sags while the motor runs
+    (opening/closing) and recovers once it stops, so a brief dip during a
+    transition is normal. The value is voltage rather than a percentage: the
+    app's percentage is derived from this voltage, and under load that
+    percentage momentarily drops with the sag rather than reflecting true
+    charge - voltage is the more honest signal.
+    """
+
+    _attr_device_class = SensorDeviceClass.VOLTAGE
+    _attr_native_unit_of_measurement = UnitOfElectricPotential.VOLT
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 2
+
+    def __init__(self, coordinator: RunChickenCoordinator) -> None:
+        """Initialize the battery-voltage sensor."""
+        super().__init__(coordinator, "battery_voltage", "Battery Voltage")
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the current battery voltage in volts."""
+        return self.coordinator.data.battery_voltage
+
+
+# Two voltage->percentage points read straight off the app's own display:
+# 2.90V showed 89%, and 2.77V (a mid-open sag) showed 71%. The app maps voltage
+# to a percentage; these are two points on that curve, used here as a linear
+# interpolation. Like the app, the result dips with the voltage while the motor
+# runs. Calibrated for this door's 2x-AA pack; revisit if more points are known.
+_BATTERY_REF_LOW_V, _BATTERY_REF_LOW_PCT = 2.77, 71
+_BATTERY_REF_HIGH_V, _BATTERY_REF_HIGH_PCT = 2.90, 89
+_BATTERY_PCT_PER_VOLT = (_BATTERY_REF_HIGH_PCT - _BATTERY_REF_LOW_PCT) / (
+    _BATTERY_REF_HIGH_V - _BATTERY_REF_LOW_V
+)
+
+
+class RunChickenBatteryLevelSensor(RunChickenSensorBase):
+    """
+    Estimated battery percentage, derived from the measured voltage.
+
+    The door only reports voltage, not a percentage - the app computes one from
+    the voltage, and this mirrors it via a linear fit through two observed app
+    readings (see the reference constants above), clamped to 0-100. Enabled by
+    default; the underlying voltage sensor is available but off by default.
+    """
+
+    _attr_device_class = SensorDeviceClass.BATTERY
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_entity_registry_enabled_default = True
+
+    def __init__(self, coordinator: RunChickenCoordinator) -> None:
+        """Initialize the battery-level sensor."""
+        super().__init__(coordinator, "battery_level", "Battery")
+
+    @property
+    def native_value(self) -> int | None:
+        """Return the estimated battery percentage, or None if voltage is unknown."""
+        voltage = self.coordinator.data.battery_voltage
+        if voltage is None:
+            return None
+        percent = _BATTERY_REF_LOW_PCT + (voltage - _BATTERY_REF_LOW_V) * _BATTERY_PCT_PER_VOLT
+        return round(max(0, min(100, percent)))
