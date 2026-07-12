@@ -255,13 +255,7 @@ class RunChickenOpenTimeSensor(RunChickenTimeSensorBase):
 
 
 class RunChickenCloseTimeSensor(RunChickenTimeSensorBase):
-    """
-    Reports the door's close time when in Time mode.
-
-    UNVERIFIED: relies on ``close_time_offset`` (protocol.py), which is
-    hypothesized by symmetry with the confirmed open-time offset, not
-    independently confirmed against a real Close->Time app setting.
-    """
+    """Reports the door's close time when in Time mode."""
 
     def __init__(self, coordinator: RunChickenCoordinator) -> None:
         """Initialize the close-time sensor."""

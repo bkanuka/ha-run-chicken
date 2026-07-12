@@ -86,9 +86,8 @@ class RunChickenProtocol(abc.ABC):
     open_time_offset: ClassVar[int] = 21
     #: 2 bytes: resolved close time as (hour, minute), UTC - same shape as
     #: open_time_offset, by symmetry with the open_schedule_mode_offset /
-    #: close_schedule_mode_offset pairing. UNVERIFIED: hypothesized from byte
-    #: position alone, never independently confirmed against a real
-    #: Close->Time app setting the way open_time_offset was.
+    #: close_schedule_mode_offset pairing. Confirmed against a real Close->Time
+    #: app setting (21:00 local read back here as 01:00 UTC).
     close_time_offset: ClassVar[int] = 23
     open_offset_minutes_offset: ClassVar[int] = 25
     close_offset_minutes_offset: ClassVar[int] = 26

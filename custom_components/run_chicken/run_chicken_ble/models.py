@@ -71,7 +71,6 @@ class RunChickenDeviceData:
     #: computed it (Timer sets it directly; Sunrise/Sunset resolves it daily).
     open_time: dt.time | None = None
     #: Resolved close time (UTC) - same shape as open_time, by symmetry with
-    #: the open/close schedule-mode and offset-minutes pairs. UNVERIFIED:
-    #: the byte offset behind this is hypothesized, not independently
-    #: confirmed against a real Close->Time app setting.
+    #: the open/close schedule-mode and offset-minutes pairs. Confirmed against
+    #: a real Close->Time app setting (21:00 local read back as 01:00 UTC).
     close_time: dt.time | None = None
