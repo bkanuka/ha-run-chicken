@@ -21,7 +21,7 @@ dependencies = [
     "pre-commit>=4.6.0",
     "ruff>=0.15.21",
     "sensor-state-data>=2.20.0",
-    "ty>=0.0.58",
+    "ty>=0.0.62",
     "voluptuous>=0.15.2",
 ]
 
