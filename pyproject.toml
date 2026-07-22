@@ -18,7 +18,7 @@ dependencies = [
     # align the dev env so the bluetooth stack matches what HA actually runs.
     "habluetooth>=6.26.5",
     "homeassistant>=2026.6.4",
-    "pre-commit>=4.6.0",
+    "pre-commit>=4.6.1",
     "ruff>=0.15.21",
     "sensor-state-data>=2.20.0",
     "ty>=0.0.58",
