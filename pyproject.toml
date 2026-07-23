@@ -12,7 +12,7 @@ dependencies = [
     "bleak>=3.0.2",
     "bleak-retry-connector>=4.6.1",
     "bluetooth-sensor-state-data>=1.9.0",
-    "colorlog>=6.10.1",
+    "colorlog>=6.12.0",
     "crc8>=0.2.1",
     # Not imported directly, but Home Assistant's bluetooth component pins this;
     # align the dev env so the bluetooth stack matches what HA actually runs.
