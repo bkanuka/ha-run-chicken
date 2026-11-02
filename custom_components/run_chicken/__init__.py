@@ -28,7 +28,9 @@ if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
 PLATFORMS: list[Platform] = [
+    Platform.BINARY_SENSOR,
     Platform.COVER,
+    Platform.SENSOR,
 ]
 
 type RunChickenConfigEntry = ConfigEntry[RunChickenCoordinator]

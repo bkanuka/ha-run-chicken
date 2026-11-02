@@ -13,9 +13,10 @@ defines the public surface of the package.
 """
 
 from .device import RunChickenDevice
-from .models import RunChickenDeviceData
+from .models import RunChickenDeviceData, RunChickenSchedule
 
 __all__ = [
     "RunChickenDevice",
     "RunChickenDeviceData",
+    "RunChickenSchedule",
 ]

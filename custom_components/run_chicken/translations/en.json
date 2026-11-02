@@ -27,11 +27,60 @@
             "init": {
                 "title": "Run-Chicken options",
                 "data": {
+                    "persistent_connection": "Keep a persistent Bluetooth connection",
+                    "poll_on_schedule": "Without persistent connection: poll only after scheduled opening/closing",
+                    "poll_interval": "Poll interval (minutes), used when polling on schedule is off",
                     "record_raw_bytes": "Record raw door data to a file"
                 },
                 "data_description": {
+                    "persistent_connection": "On: the door reports state changes instantly, but staying connected drains its batteries much faster (months instead of 1-2 years). Off: Home Assistant connects briefly every poll interval and for open/close commands, then disconnects; state changes the door makes on its own show up at the next poll.",
+                    "poll_on_schedule": "Connects ~3 min after each scheduled operation and for commands from Home Assistant (in manual mode once a day). Every connection makes the door play its tune and light its LED. Off: poll on the interval below.",
+                    "poll_interval": "How often to connect and read state and battery when the persistent connection is off (5-60).",
                     "record_raw_bytes": "When enabled, every raw message exchanged with the door (received and sent) is appended (timestamp + RX/TX + base64) to a run_chicken_[address].log file in your Home Assistant config folder. Attach that file when reporting an issue. Leave off for normal use."
                 }
+            }
+        }
+    },
+    "entity": {
+        "sensor": {
+            "battery": {
+                "name": "Battery"
+            },
+            "battery_voltage": {
+                "name": "Battery voltage"
+            },
+            "battery_voltage_under_load": {
+                "name": "Battery voltage under load"
+            },
+            "scheduled_open": {
+                "name": "Next opening"
+            },
+            "scheduled_close": {
+                "name": "Next closing"
+            },
+            "battery_raw": {
+                "name": "Battery (raw)"
+            },
+            "open_mode": {
+                "name": "Opening mode",
+                "state": {
+                    "sun": "Sunrise/sunset",
+                    "manual": "Manual",
+                    "other": "Other"
+                }
+            },
+            "close_mode": {
+                "name": "Closing mode",
+                "state": {
+                    "sun": "Sunrise/sunset",
+                    "manual": "Manual",
+                    "other": "Other"
+                }
+            }
+        },
+        "binary_sensor": {
+            "anti_pinch": {
+                "name": "Anti-pinch"
             }
         }
     }

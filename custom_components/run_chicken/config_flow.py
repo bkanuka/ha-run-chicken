@@ -19,7 +19,19 @@ from homeassistant.config_entries import (
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import callback
 
-from .const import CONF_RECORD_RAW_BYTES, DOMAIN, MANUFACTURER_ID
+from .const import (
+    CONF_PERSISTENT_CONNECTION,
+    CONF_POLL_INTERVAL,
+    CONF_POLL_ON_SCHEDULE,
+    CONF_RECORD_RAW_BYTES,
+    DEFAULT_PERSISTENT_CONNECTION,
+    DEFAULT_POLL_INTERVAL_MINUTES,
+    DEFAULT_POLL_ON_SCHEDULE,
+    DOMAIN,
+    MANUFACTURER_ID,
+    MAX_POLL_INTERVAL_MINUTES,
+    MIN_POLL_INTERVAL_MINUTES,
+)
 from .run_chicken_ble import RunChickenDevice
 
 if TYPE_CHECKING:
@@ -146,11 +158,27 @@ class RunChickenOptionsFlow(OptionsFlowWithReload):
         if user_input is not None:
             return self.async_create_entry(data=user_input)
 
+        options = self.config_entry.options
         schema = vol.Schema(
             {
                 vol.Required(
+                    CONF_PERSISTENT_CONNECTION,
+                    default=options.get(CONF_PERSISTENT_CONNECTION, DEFAULT_PERSISTENT_CONNECTION),
+                ): bool,
+                vol.Required(
+                    CONF_POLL_ON_SCHEDULE,
+                    default=options.get(CONF_POLL_ON_SCHEDULE, DEFAULT_POLL_ON_SCHEDULE),
+                ): bool,
+                vol.Required(
+                    CONF_POLL_INTERVAL,
+                    default=options.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL_MINUTES),
+                ): vol.All(
+                    vol.Coerce(int),
+                    vol.Range(min=MIN_POLL_INTERVAL_MINUTES, max=MAX_POLL_INTERVAL_MINUTES),
+                ),
+                vol.Required(
                     CONF_RECORD_RAW_BYTES,
-                    default=self.config_entry.options.get(CONF_RECORD_RAW_BYTES, False),
+                    default=options.get(CONF_RECORD_RAW_BYTES, False),
                 ): bool,
             }
         )
