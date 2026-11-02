@@ -2,7 +2,7 @@
 Sensor platform for run_chicken.
 
 Battery: the door reports a raw byte proportional to the battery voltage
-(volts ~= 2.12 + 0.0112 * raw on a T-50 with 2x AA; fitted to multimeter and app readings). It is
+(volts ~= 2.07 + 0.0115 * raw on a T-50 with 2x AA; fitted to multimeter and app readings from two doors). It is
 exposed as voltage (idle and under motor load) and as a percentage following an
 alkaline discharge curve. The official app shows ~0.35 V more than a
 multimeter and counts its percentage down per operation rather than measuring.
@@ -45,12 +45,12 @@ if TYPE_CHECKING:
     from .run_chicken_ble.models import RunChickenDeviceData
 
 #: Raw battery counts per volt (2x AA T-50, multimeter-calibrated).
-#: volts ~= BATTERY_VOLT_OFFSET + BATTERY_VOLT_PER_COUNT * raw, fitted to four
-#: reference points (multimeter at 3.08 V / 3.23 V, app readings corrected by
-#: the app's ~+0.35 V bias at raw 87 and 74). A pure proportional fit (raw /
-#: 28.8) matched the top end but read ~0.4 V low further down.
-BATTERY_VOLT_OFFSET = 2.12
-BATTERY_VOLT_PER_COUNT = 0.0112
+#: volts ~= BATTERY_VOLT_OFFSET + BATTERY_VOLT_PER_COUNT * raw, fitted to five
+#: reference points from two T50 doors (FW 1.2.56): multimeter at 3.08 V,
+#: 3.23 V and 2.61 V, plus two app readings corrected by the app's ~+0.35 V
+#: bias. All points lie within +/-0.03 V of the line.
+BATTERY_VOLT_OFFSET = 2.07
+BATTERY_VOLT_PER_COUNT = 0.0115
 #: Cells in series.
 BATTERY_CELLS = 2
 #: State of charge vs. per-cell voltage for an alkaline AA at light load
