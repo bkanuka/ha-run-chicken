@@ -31,6 +31,10 @@ WRITE_SERVICE_UUID = "00000000-cc7a-482a-984a-7f2ed5b3e58f"
 WRITE_CHAR_UUID = "00000000-8e22-4541-9d4c-21edae82ed19"
 
 
+#: Schedule mode value for "manual" (observed); 1 is sunrise/sunset.
+MODE_MANUAL = 2
+
+
 class RunChickenAction(IntEnum):
     """Door action encoded in a command frame (byte [21])."""
 
@@ -121,7 +125,10 @@ class RunChickenProtocol(abc.ABC):
         [9..10] latitude and [11..12] longitude in whole degrees (int16 LE),
         [19]/[20] open/close mode, [21..22] open hh:mm UTC, [23..24] close hh:mm
         UTC, [25]/[26] open/close offset in minutes, [41] anti-pinch flag.
-        Returns ``None`` for short payloads or when no location is stored.
+        Returns ``None`` for short payloads. Modes, offsets and anti-pinch do
+        not depend on a stored location; latitude/longitude are ``None`` when
+        none is stored (0/0), and times are ``None`` in manual mode or when
+        the door reports 00:00.
 
         The door only recomputes its times after the morning opening, so the
         stored times are turned into their *next* occurrence after the door
@@ -131,8 +138,8 @@ class RunChickenProtocol(abc.ABC):
         if len(payload) < self.schedule_min_length:
             return None
         lat, lon = struct.unpack_from("<hh", payload, 9)
-        if lat == 0 and lon == 0:
-            return None
+        has_location = not (lat == 0 and lon == 0)
+        open_mode, close_mode = payload[19], payload[20]
         door_clock = dt.datetime.fromtimestamp(struct.unpack_from("<I", payload, 1)[0], dt.UTC)
 
         def next_at(hour: int, minute: int) -> dt.datetime | None:
@@ -146,8 +153,10 @@ class RunChickenProtocol(abc.ABC):
         anti_pinch_offset = 41
         anti_pinch = bool(payload[anti_pinch_offset]) if len(payload) > anti_pinch_offset else None
 
-        open_time = next_at(payload[21], payload[22])
-        close_time = next_at(payload[23], payload[24])
+        # In manual mode the door does not operate on its own; any stored times
+        # are leftovers from an earlier mode.
+        open_time = None if open_mode == MODE_MANUAL else next_at(payload[21], payload[22])
+        close_time = None if close_mode == MODE_MANUAL else next_at(payload[23], payload[24])
         # Right after an operation the door already reports the following day's
         # time, which can still lie a few minutes ahead of its clock. An open
         # door opens next only after it has closed, and vice versa.
@@ -159,10 +168,10 @@ class RunChickenProtocol(abc.ABC):
                 close_time += dt.timedelta(days=1)
 
         return RunChickenSchedule(
-            latitude=lat,
-            longitude=lon,
-            open_mode=payload[19],
-            close_mode=payload[20],
+            latitude=lat if has_location else None,
+            longitude=lon if has_location else None,
+            open_mode=open_mode,
+            close_mode=close_mode,
             open_time=open_time,
             close_time=close_time,
             open_offset=payload[25],

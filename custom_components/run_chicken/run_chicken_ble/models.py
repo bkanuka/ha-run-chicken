@@ -51,8 +51,8 @@ class RunChickenSchedule:
     (e.g. 2) is not confirmed yet.
     """
 
-    latitude: int
-    longitude: int
+    latitude: int | None
+    longitude: int | None
     open_mode: int
     close_mode: int
     open_time: dt.datetime | None

@@ -33,7 +33,7 @@
                     "record_raw_bytes": "Rohdaten der Tür in eine Datei aufzeichnen"
                 },
                 "data_description": {
-                    "persistent_connection": "An: Die Tür meldet Änderungen sofort, aber die Dauerverbindung leert die Batterien deutlich schneller (Monate statt 1–2 Jahre). Aus: Home Assistant verbindet sich nur im Abfrageintervall und für Öffnen/Schließen kurz und trennt danach wieder; selbstständige Fahrten der Tür erscheinen bei der nächsten Abfrage.",
+                    "persistent_connection": "An: Die Tür meldet Änderungen sofort, aber die Dauerverbindung verbraucht mehr Batterie. Aus: Home Assistant verbindet sich nur im Abfrageintervall und für Öffnen/Schließen kurz und trennt danach wieder; selbstständige Fahrten der Tür erscheinen bei der nächsten Abfrage.",
                     "poll_on_schedule": "Verbindet sich ~3 Minuten nach jeder geplanten Fahrt und für Befehle aus Home Assistant (im Modus „Manuell“ einmal am Tag). Jede Verbindung lässt die Tür eine Melodie spielen und die LED leuchten. Aus: Abfrage im Intervall darunter.",
                     "poll_interval": "Wie oft ohne Dauerverbindung Status und Batterie gelesen werden (5–60).",
                     "record_raw_bytes": "Wenn aktiviert, wird jede Rohnachricht zwischen Tür und Home Assistant (Zeitstempel + RX/TX + Base64) an die Datei run_chicken_[Adresse].log im Konfigurationsordner angehängt. Für die Fehlermeldung gedacht; im Normalbetrieb ausgeschaltet lassen."

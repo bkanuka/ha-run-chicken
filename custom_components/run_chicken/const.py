@@ -14,7 +14,7 @@ CONF_RECORD_RAW_BYTES = "record_raw_bytes"
 
 # Options-flow keys for the connection strategy. With a persistent connection
 # the door pushes state changes instantly, but staying connected drains its
-# batteries much faster (observed: ~3 months instead of 1-2 years). Without it,
+# batteries faster. Without it,
 # the integration connects briefly every CONF_POLL_INTERVAL minutes and for
 # commands, then disconnects again.
 CONF_PERSISTENT_CONNECTION = "persistent_connection"
