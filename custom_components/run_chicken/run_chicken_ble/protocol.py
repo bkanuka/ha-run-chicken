@@ -31,8 +31,9 @@ WRITE_SERVICE_UUID = "00000000-cc7a-482a-984a-7f2ed5b3e58f"
 WRITE_CHAR_UUID = "00000000-8e22-4541-9d4c-21edae82ed19"
 
 
-#: Schedule mode value for "manual" (observed); 1 is sunrise/sunset.
-MODE_MANUAL = 2
+#: Schedule mode values the app shows as "Manual": 2 when set explicitly, 0 on
+#: a door whose automation was never configured. 1 is sunrise/sunset.
+MANUAL_MODES = frozenset({0, 2})
 
 
 class RunChickenAction(IntEnum):
@@ -155,8 +156,8 @@ class RunChickenProtocol(abc.ABC):
 
         # In manual mode the door does not operate on its own; any stored times
         # are leftovers from an earlier mode.
-        open_time = None if open_mode == MODE_MANUAL else next_at(payload[21], payload[22])
-        close_time = None if close_mode == MODE_MANUAL else next_at(payload[23], payload[24])
+        open_time = None if open_mode in MANUAL_MODES else next_at(payload[21], payload[22])
+        close_time = None if close_mode in MANUAL_MODES else next_at(payload[23], payload[24])
         # Right after an operation the door already reports the following day's
         # time, which can still lie a few minutes ahead of its clock. An open
         # door opens next only after it has closed, and vice versa.

@@ -71,7 +71,7 @@ ALKALINE_CURVE: tuple[tuple[float, int], ...] = (
 )
 
 #: Known schedule mode values.
-MODE_NAMES = {1: "sun", 2: "manual"}
+MODE_NAMES = {0: "manual", 1: "sun", 2: "manual"}
 MODE_OPTIONS = ["sun", "manual", "other"]
 
 
