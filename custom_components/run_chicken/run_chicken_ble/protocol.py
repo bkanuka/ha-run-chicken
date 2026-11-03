@@ -54,9 +54,7 @@ class RunChickenProtocol(abc.ABC):
     door_state_offset: ClassVar[int] = 17
 
     #: Byte offset of the (raw, unscaled) battery value in a read payload.
-    #: Proportional to the battery voltage: volts ~= raw / 28.8 on a T-50 with
-    #: 2x AA, calibrated against a multimeter at 3.08 V (raw ~89) and 3.23 V
-    #: (raw 93).
+    #: Linear in the battery voltage; see ``sensor.raw_to_volts`` for the scale.
     battery_offset: ClassVar[int] = 13
 
     #: Byte [0] 0xB5 marks a frame sent after a door movement (or a settings
