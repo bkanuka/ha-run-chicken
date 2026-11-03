@@ -19,7 +19,7 @@ from typing import ClassVar
 
 import crc8
 
-from .models import RunChickenDoorState
+from .models import RunChickenDoorState, RunChickenSchedule
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,6 +29,11 @@ READ_SERVICE_UUID = "0000004f-cc7a-482a-984a-7f2ed5b3e58f"
 READ_CHAR_UUID = "00000001-8e22-4541-9d4c-21edae82ed19"
 WRITE_SERVICE_UUID = "00000000-cc7a-482a-984a-7f2ed5b3e58f"
 WRITE_CHAR_UUID = "00000000-8e22-4541-9d4c-21edae82ed19"
+
+
+#: Schedule mode values the app shows as "Manual": 2 when set explicitly, 0 on
+#: a door whose automation was never configured. 1 is sunrise/sunset.
+MANUAL_MODES = frozenset({0, 2})
 
 
 class RunChickenAction(IntEnum):
@@ -47,6 +52,19 @@ class RunChickenProtocol(abc.ABC):
 
     #: Byte offset of the door-state field in a read-characteristic payload.
     door_state_offset: ClassVar[int] = 17
+
+    #: Byte offset of the (raw, unscaled) battery value in a read payload.
+    #: Linear in the battery voltage; see ``sensor.raw_to_volts`` for the scale.
+    battery_offset: ClassVar[int] = 13
+
+    #: Byte [0] 0xB5 marks a frame sent after a door movement (or a settings
+    #: change); its battery byte appears to be the reading taken while the
+    #: motor ran, i.e. under load. Other frame types carry the idle value,
+    #: though readings taken while the motor runs can still sag.
+    load_frame_types: ClassVar[frozenset[int]] = frozenset({0xB5})
+
+    #: Minimum payload length carrying location and schedule settings.
+    schedule_min_length: ClassVar[int] = 27
 
     @classmethod
     def for_advertised_name(cls, name: str | None) -> RunChickenProtocol:
@@ -85,6 +103,79 @@ class RunChickenProtocol(abc.ABC):
             return RunChickenDoorState.UNKNOWN
         return {0: RunChickenDoorState.OPEN, 1: RunChickenDoorState.CLOSED}.get(
             payload[self.door_state_offset], RunChickenDoorState.UNKNOWN
+        )
+
+    def parse_battery_raw(self, payload: bytes | bytearray) -> tuple[int | None, bool]:
+        """
+        Return ``(raw, under_load)`` for the battery byte.
+
+        ``raw`` is ``None`` for short payloads; ``under_load`` tells whether the
+        frame type carries the reading taken while the motor ran.
+        """
+        if len(payload) <= self.battery_offset:
+            return None, False
+        return payload[self.battery_offset], payload[0] in self.load_frame_types
+
+    def parse_schedule(self, payload: bytes | bytearray) -> RunChickenSchedule | None:
+        """
+        Decode location and schedule settings, if the payload carries them.
+
+        Layout (T-50 FW 1.2.x, long payload): [1..4] door clock (unix, LE),
+        [9..10] latitude and [11..12] longitude in whole degrees (int16 LE),
+        [19]/[20] open/close mode, [21..22] open hh:mm UTC, [23..24] close hh:mm
+        UTC, [25]/[26] open/close offset in minutes, [41] anti-pinch flag.
+        Returns ``None`` for short payloads. Modes, offsets and anti-pinch do
+        not depend on a stored location; latitude/longitude are ``None`` when
+        none is stored (0/0), and times are ``None`` in manual mode or when
+        the door reports 00:00.
+
+        The door only recomputes its times after the morning opening, so the
+        stored times are turned into their *next* occurrence after the door
+        clock; between midnight and the opening this is the previous day's time
+        applied to today, typically within a couple of minutes.
+        """
+        if len(payload) < self.schedule_min_length:
+            return None
+        lat, lon = struct.unpack_from("<hh", payload, 9)
+        has_location = not (lat == 0 and lon == 0)
+        open_mode, close_mode = payload[19], payload[20]
+        door_clock = dt.datetime.fromtimestamp(struct.unpack_from("<I", payload, 1)[0], dt.UTC)
+
+        def next_at(hour: int, minute: int) -> dt.datetime | None:
+            if hour > 23 or minute > 59 or (hour == 0 and minute == 0):  # noqa: PLR2004
+                return None
+            candidate = door_clock.replace(hour=hour, minute=minute, second=0, microsecond=0)
+            if candidate <= door_clock:
+                candidate += dt.timedelta(days=1)
+            return candidate
+
+        anti_pinch_offset = 41
+        anti_pinch = bool(payload[anti_pinch_offset]) if len(payload) > anti_pinch_offset else None
+
+        # In manual mode the door does not operate on its own; any stored times
+        # are leftovers from an earlier mode.
+        open_time = None if open_mode in MANUAL_MODES else next_at(payload[21], payload[22])
+        close_time = None if close_mode in MANUAL_MODES else next_at(payload[23], payload[24])
+        # Right after an operation the door already reports the following day's
+        # time, which can still lie a few minutes ahead of its clock. An open
+        # door opens next only after it has closed, and vice versa.
+        door_state = self.parse_door_state(payload)
+        if open_time and close_time:
+            if door_state is RunChickenDoorState.OPEN and open_time < close_time:
+                open_time += dt.timedelta(days=1)
+            elif door_state is RunChickenDoorState.CLOSED and close_time < open_time:
+                close_time += dt.timedelta(days=1)
+
+        return RunChickenSchedule(
+            latitude=lat if has_location else None,
+            longitude=lon if has_location else None,
+            open_mode=open_mode,
+            close_mode=close_mode,
+            open_time=open_time,
+            close_time=close_time,
+            open_offset=payload[25],
+            close_offset=payload[26],
+            anti_pinch=anti_pinch,
         )
 
     @staticmethod

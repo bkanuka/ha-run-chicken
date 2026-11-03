@@ -1,0 +1,87 @@
+{
+    "config": {
+        "flow_title": "{name}",
+        "step": {
+            "user": {
+                "description": "Wähle die Run-Chicken-Tür aus, die hinzugefügt werden soll.",
+                "data": {
+                    "address": "Gerät"
+                }
+            },
+            "bluetooth_confirm": {
+                "description": "Möchtest du die Run-Chicken-Tür {name} einrichten?"
+            }
+        },
+        "error": {
+            "cannot_connect": "Verbindung fehlgeschlagen. Stelle sicher, dass die Tür eingeschaltet und in Bluetooth-Reichweite ist, und versuche es erneut.",
+            "unknown": "Ein unerwarteter Fehler ist aufgetreten."
+        },
+        "abort": {
+            "already_configured": "Dieses Gerät ist bereits eingerichtet.",
+            "not_run_chicken_device": "Das gefundene Gerät ist keine Run-Chicken-Tür.",
+            "no_devices_found": "Keine Run-Chicken-Geräte gefunden."
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Run-Chicken-Optionen",
+                "data": {
+                    "persistent_connection": "Bluetooth-Verbindung dauerhaft halten",
+                    "poll_on_schedule": "Ohne Dauerverbindung: nur nach geplanter Öffnung/Schließung abfragen",
+                    "poll_interval": "Abfrageintervall (Minuten), wenn nicht nach Schaltzeiten abgefragt wird",
+                    "record_raw_bytes": "Rohdaten der Tür in eine Datei aufzeichnen"
+                },
+                "data_description": {
+                    "persistent_connection": "An: Die Tür meldet Änderungen sofort, aber die Dauerverbindung verbraucht mehr Batterie. Aus: Home Assistant verbindet sich nur im Abfrageintervall und für Öffnen/Schließen kurz und trennt danach wieder; selbstständige Fahrten der Tür erscheinen bei der nächsten Abfrage.",
+                    "poll_on_schedule": "Verbindet sich ~3 Minuten nach jeder geplanten Fahrt und für Befehle aus Home Assistant (im Modus „Manuell“ einmal am Tag). Jede Verbindung lässt die Tür eine Melodie spielen und die LED leuchten. Aus: Abfrage im Intervall darunter.",
+                    "poll_interval": "Wie oft ohne Dauerverbindung Status und Batterie gelesen werden (5–60).",
+                    "record_raw_bytes": "Wenn aktiviert, wird jede Rohnachricht zwischen Tür und Home Assistant (Zeitstempel + RX/TX + Base64) an die Datei run_chicken_[Adresse].log im Konfigurationsordner angehängt. Für die Fehlermeldung gedacht; im Normalbetrieb ausgeschaltet lassen."
+                }
+            }
+        }
+    },
+    "entity": {
+        "sensor": {
+            "battery": {
+                "name": "Batterie"
+            },
+            "battery_voltage": {
+                "name": "Batteriespannung"
+            },
+            "battery_voltage_under_load": {
+                "name": "Batteriespannung unter Last"
+            },
+            "scheduled_open": {
+                "name": "Nächste Öffnung"
+            },
+            "scheduled_close": {
+                "name": "Nächste Schließung"
+            },
+            "battery_raw": {
+                "name": "Batterie (Rohwert)"
+            },
+            "open_mode": {
+                "name": "Modus Öffnen",
+                "state": {
+                    "sun": "Sonnenstand",
+                    "manual": "Manuell",
+                    "other": "Andere"
+                }
+            },
+            "close_mode": {
+                "name": "Modus Schließen",
+                "state": {
+                    "sun": "Sonnenstand",
+                    "manual": "Manuell",
+                    "other": "Andere"
+                }
+            }
+        },
+        "binary_sensor": {
+            "anti_pinch": {
+                "name": "Einklemmschutz"
+            }
+        }
+    }
+}
